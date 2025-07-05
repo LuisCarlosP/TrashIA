@@ -1,5 +1,6 @@
 from fastapi import FastAPI, File, UploadFile
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 import tensorflow as tf
 import numpy as np
 from PIL import Image
@@ -7,6 +8,14 @@ from io import BytesIO
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8080"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],  
+)
 
 class_names = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
 reciclable_info = {
