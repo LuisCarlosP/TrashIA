@@ -6,9 +6,7 @@ python -m venv venv
 
 Download 
 
-pip install fastapi uvicorn tensorflow pillow numpy
-
-pip install python-multipart
+pip install -r requirements.txt
 
 Run
 

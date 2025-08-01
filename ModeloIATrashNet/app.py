@@ -1,49 +1,89 @@
-from fastapi import FastAPI, File, UploadFile
+"""
+API FastAPI para clasificación de basura usando IA.
+"""
+import logging
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-import tensorflow as tf
-import numpy as np
-from PIL import Image
-from io import BytesIO
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
-app = FastAPI()
+from config import ALLOWED_ORIGINS
+from services import ModelService, ImageProcessor, ResponseFormatter
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(
+    title="Clasificador de Basura IA",
+    description="API para clasificar tipos de basura y determinar reciclabilidad",
+    version="1.0.0"
+)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8080"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],  
+    allow_headers=["*"],
 )
 
-class_names = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
-reciclable_info = {
-    'cardboard': (True, "El cartón es reciclable y debe colocarse en el contenedor azul."),
-    'glass': (True, "El vidrio es reciclable, pero debe estar limpio y sin tapas."),
-    'metal': (True, "Los metales son reciclables y se pueden depositar en puntos específicos."),
-    'paper': (True, "El papel es reciclable siempre que no esté muy sucio."),
-    'plastic': (True, "El plástico es reciclable, pero algunos tipos requieren separación."),
-    'trash': (False, "Este material no es reciclable y debe ir a la basura común.")
-}
+try:
+    model_service = ModelService()
+    image_processor = ImageProcessor()
+    response_formatter = ResponseFormatter()
+    logger.info("Servicios inicializados correctamente")
+except Exception as e:
+    logger.error(f"Error al inicializar servicios: {e}")
+    raise
 
-model = tf.keras.models.load_model('modelo_basura.h5')
+@app.get("/health")
+async def health_check():
+    """Endpoint de verificación de salud."""
+    return {"status": "healthy", "message": "API funcionando correctamente"}
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
-    image = Image.open(BytesIO(await file.read())).convert('RGB')
-    image = image.resize((224, 224))
-    img_array = tf.keras.utils.img_to_array(image)
-    img_array = tf.expand_dims(img_array, 0)
-    img_array = preprocess_input(img_array)
-    predicciones = model.predict(img_array)
-    indice = np.argmax(predicciones)
-    clase = class_names[indice]
-    confianza = float(tf.nn.softmax(predicciones[0])[indice].numpy())
-    es_reciclable, mensaje = reciclable_info.get(clase, (False, "No hay información sobre reciclabilidad."))
-    return JSONResponse({
-        "clase": clase,
-        "confianza": confianza,
-        "es_reciclable": es_reciclable,
-        "mensaje": mensaje
-    })
+    """
+    Predice el tipo de basura y su reciclabilidad.
+    
+    Args:
+        file: Archivo de imagen a clasificar
+        
+    Returns:
+        JSON con la clasificación y información de reciclabilidad
+    """
+    try:
+        if not file.content_type or not file.content_type.startswith('image/'):
+            raise HTTPException(
+                status_code=400, 
+                detail="El archivo debe ser una imagen válida"
+            )
+        file_bytes = await file.read()
+        img_array = image_processor.process_image(file_bytes)
+        class_name, confidence = model_service.predict(img_array)
+        response_data = response_formatter.format_prediction_response(
+            class_name, confidence
+        )
+        
+        logger.info(f"Predicción exitosa para archivo: {file.filename}")
+        return JSONResponse(content=response_data)
+        
+    except HTTPException:
+        raise
+    except ValueError as e:
+        logger.error(f"Error de validación: {e}")
+        error_response = response_formatter.format_error_response(
+            str(e), 400
+        )
+        return JSONResponse(content=error_response, status_code=400)
+    except Exception as e:
+        logger.error(f"Error interno del servidor: {e}")
+        error_response = response_formatter.format_error_response(
+            "Error interno del servidor", 500
+        )
+        return JSONResponse(content=error_response, status_code=500)
+
+if __name__ == "__main__":
+    import uvicorn
+    from config import HOST, PORT
+    
+    uvicorn.run(app, host=HOST, port=PORT)

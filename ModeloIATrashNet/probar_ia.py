@@ -1,44 +1,92 @@
-import tensorflow as tf
-import numpy as np
-from PIL import Image
+"""
+Script para probar el modelo de IA de clasificación de basura.
+Refactorizado para usar los módulos compartidos.
+"""
+import sys
+import logging
+from pathlib import Path
 from tkinter import Tk, filedialog
-from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 
-class_names = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
+from services import ModelService, ImageProcessor, ResponseFormatter
 
-reciclable_info = {
-    'cardboard': (True, "El cartón es reciclable y debe colocarse en el contenedor azul."),
-    'glass': (True, "El vidrio es reciclable, pero debe estar limpio y sin tapas."),
-    'metal': (True, "Los metales son reciclables y se pueden depositar en puntos específicos."),
-    'paper': (True, "El papel es reciclable siempre que no esté muy sucio o plastificado."),
-    'plastic': (True, "El plástico es reciclable, pero algunos tipos requieren separación."),
-    'trash': (False, "Este material no es reciclable y debe ir a la basura común.")
-}
+# Configurar logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-model = tf.keras.models.load_model('modelo_basura.h5')
+def select_image_file() -> str:
+    """
+    Abre un diálogo para seleccionar un archivo de imagen.
+    
+    Returns:
+        Ruta del archivo seleccionado
+    """
+    Tk().withdraw()
+    file_path = filedialog.askopenfilename(
+        title="Selecciona una imagen",
+        filetypes=[("Imágenes", "*.jpg *.jpeg *.png *.bmp *.tiff *.webp")]
+    )
+    return file_path
 
-Tk().withdraw()
-ruta_imagen = filedialog.askopenfilename(
-    title="Selecciona una imagen",
-    filetypes=[("Imágenes", "*.jpg *.jpeg *.png *.bmp")]
-)
+def test_model_with_image(image_path: str) -> None:
+    """
+    Prueba el modelo con una imagen específica.
+    
+    Args:
+        image_path: Ruta al archivo de imagen
+    """
+    try:
+        # Inicializar servicios
+        model_service = ModelService()
+        image_processor = ImageProcessor()
+        response_formatter = ResponseFormatter()
+        
+        # Verificar que el archivo existe
+        path = Path(image_path)
+        if not path.exists():
+            logger.error(f"El archivo {image_path} no existe")
+            return
+        
+        # Leer archivo
+        with open(image_path, 'rb') as f:
+            file_bytes = f.read()
+        
+        # Procesar imagen
+        logger.info(f"Procesando imagen: {image_path}")
+        img_array = image_processor.process_image(file_bytes)
+        
+        # Realizar predicción
+        class_name, confidence = model_service.predict(img_array)
+        
+        # Formatear y mostrar resultados
+        response = response_formatter.format_prediction_response(class_name, confidence)
+        
+        print("\n" + "="*50)
+        print(f"RESULTADOS PARA: {path.name}")
+        print("="*50)
+        print(f"Clase predicha: {response['clase'].upper()}")
+        print(f"Confianza: {response['confianza']:.2%}")
+        print(f"Es reciclable: {'Sí' if response['es_reciclable'] else 'No'}")
+        print(f"Mensaje: {response['mensaje']}")
+        print("="*50)
+        
+    except Exception as e:
+        logger.error(f"Error al probar el modelo: {e}")
+        print(f"Error: {e}")
 
-if not ruta_imagen:
-    print("No se seleccionó ninguna imagen.")
-    exit()
+def main():
+    """Función principal del script de prueba."""
+    # Si se proporciona una ruta como argumento, usarla
+    if len(sys.argv) == 2:
+        image_path = sys.argv[1]
+    else:
+        # Caso contrario, abrir diálogo para seleccionar imagen
+        image_path = select_image_file()
+        
+        if not image_path:
+            print("No se seleccionó ninguna imagen.")
+            sys.exit(1)
+    
+    test_model_with_image(image_path)
 
-img = Image.open(ruta_imagen).convert('RGB')
-img = img.resize((224, 224))
-img_array = tf.keras.utils.img_to_array(img)
-img_array = tf.expand_dims(img_array, 0)
-img_array = preprocess_input(img_array)
-
-predicciones = model.predict(img_array)
-indice = np.argmax(predicciones)
-clase = class_names[indice]
-confianza = tf.nn.softmax(predicciones[0])[indice].numpy()
-
-es_reciclable, mensaje = reciclable_info.get(clase, (False, "No hay información sobre reciclabilidad."))
-
-print(f"Predicción: {clase.upper()} ({confianza*100:.2f}% de confianza)")
-print(mensaje)
+if __name__ == "__main__":
+    main()
