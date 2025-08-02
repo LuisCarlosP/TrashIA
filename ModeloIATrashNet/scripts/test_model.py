@@ -1,24 +1,14 @@
-"""
-Script para probar el modelo de IA de clasificación de basura.
-Refactorizado para usar los módulos compartidos.
-"""
 import sys
 import logging
 from pathlib import Path
 from tkinter import Tk, filedialog
 
-from services import ModelService, ImageProcessor, ResponseFormatter
+from services.trash_services import ModelService, ImageProcessor, ResponseFormatter
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def select_image_file() -> str:
-    """
-    Abre un diálogo para seleccionar un archivo de imagen.
-    
-    Returns:
-        Ruta del archivo seleccionado
-    """
     Tk().withdraw()
     file_path = filedialog.askopenfilename(
         title="Selecciona una imagen",
@@ -27,12 +17,6 @@ def select_image_file() -> str:
     return file_path
 
 def test_model_with_image(image_path: str) -> None:
-    """
-    Prueba el modelo con una imagen específica.
-    
-    Args:
-        image_path: Ruta al archivo de imagen
-    """
     try:
         model_service = ModelService()
         image_processor = ImageProcessor()
@@ -66,7 +50,6 @@ def test_model_with_image(image_path: str) -> None:
         print(f"Error: {e}")
 
 def main():
-    """Función principal del script de prueba."""
     if len(sys.argv) == 2:
         image_path = sys.argv[1]
     else:
