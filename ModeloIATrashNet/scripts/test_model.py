@@ -4,6 +4,7 @@ from pathlib import Path
 from tkinter import Tk, filedialog
 
 from services.trash_services import ModelService, ImageProcessor, ResponseFormatter
+from exceptions import ModelLoadError, PredictionError, ImageProcessingError
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -45,9 +46,18 @@ def test_model_with_image(image_path: str) -> None:
         print(f"Mensaje: {response['mensaje']}")
         print("="*50)
         
+    except ModelLoadError as e:
+        logger.error(f"Error al cargar el modelo: {e}")
+        print(f"Error del modelo: {e}")
+    except ImageProcessingError as e:
+        logger.error(f"Error al procesar la imagen: {e}")
+        print(f"Error de imagen: {e}")
+    except PredictionError as e:
+        logger.error(f"Error en la predicción: {e}")
+        print(f"Error de predicción: {e}")
     except Exception as e:
-        logger.error(f"Error al probar el modelo: {e}")
-        print(f"Error: {e}")
+        logger.error(f"Error inesperado: {e}")
+        print(f"Error inesperado: {e}")
 
 def main():
     if len(sys.argv) == 2:

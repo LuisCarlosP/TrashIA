@@ -7,6 +7,7 @@ from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 import logging
 
 from config.settings import IMAGE_WIDTH, IMAGE_HEIGHT, CLASS_NAMES, RECYCLABLE_INFO, MODEL_PATH
+from exceptions import ModelLoadError, PredictionError, ImageProcessingError
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +23,7 @@ class ModelService:
             logger.info(f"Modelo cargado exitosamente desde {MODEL_PATH}")
         except Exception as e:
             logger.error(f"Error al cargar el modelo: {e}")
-            raise RuntimeError(f"No se pudo cargar el modelo desde {MODEL_PATH}: {e}")
+            raise ModelLoadError(MODEL_PATH, str(e))
     
     def predict(self, img_array: np.ndarray) -> Tuple[str, float]:
         try:
@@ -36,7 +37,7 @@ class ModelService:
             
         except Exception as e:
             logger.error(f"Error en la predicción: {e}")
-            raise RuntimeError(f"Error al realizar la predicción: {e}")
+            raise PredictionError("Error al realizar la predicción", str(e))
 
 class ImageProcessor:
     
@@ -54,7 +55,7 @@ class ImageProcessor:
             
         except Exception as e:
             logger.error(f"Error al procesar la imagen: {e}")
-            raise ValueError(f"Error al procesar la imagen: {e}")
+            raise ImageProcessingError("Error al procesar la imagen", str(e))
 
 class ResponseFormatter:
     

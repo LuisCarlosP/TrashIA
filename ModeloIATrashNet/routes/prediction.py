@@ -3,6 +3,7 @@ from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from fastapi.responses import JSONResponse
 
 from core.dependencies import get_prediction_service, PredictionService
+from exceptions import ModelLoadError, PredictionError, ImageProcessingError, ValidationError
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -27,6 +28,14 @@ async def predict(
         
     except HTTPException:
         raise
+    except (ImageProcessingError, ValidationError) as e:
+        logger.error(f"Error de validación/procesamiento: {e}")
+        error_response = prediction_service.format_error(str(e), 400)
+        return JSONResponse(content=error_response, status_code=400)
+    except (ModelLoadError, PredictionError) as e:
+        logger.error(f"Error del modelo: {e}")
+        error_response = prediction_service.format_error(str(e), 500)
+        return JSONResponse(content=error_response, status_code=500)
     except ValueError as e:
         logger.error(f"Error de validación: {e}")
         error_response = prediction_service.format_error(str(e), 400)
