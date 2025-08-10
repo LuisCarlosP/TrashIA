@@ -1,0 +1,26 @@
+{
+  "cardboard": {
+    "recyclable": true,
+    "info": "El cartón es reciclable y debe colocarse en el contenedor azul."
+  },
+  "glass": {
+    "recyclable": true,
+    "info": "El vidrio es reciclable, pero debe estar limpio y sin tapas."
+  },
+  "metal": {
+    "recyclable": true,
+    "info": "Los metales son reciclables y se pueden depositar en puntos específicos."
+  },
+  "paper": {
+    "recyclable": true,
+    "info": "El papel es reciclable siempre que no esté muy sucio."
+  },
+  "plastic": {
+    "recyclable": true,
+    "info": "El plástico es reciclable, pero algunos tipos requieren separación."
+  },
+  "trash": {
+    "recyclable": false,
+    "info": "Este material no es reciclable y debe ir a la basura común."
+  }
+}

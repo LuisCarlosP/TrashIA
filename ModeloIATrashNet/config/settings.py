@@ -1,4 +1,5 @@
 import os
+import json
 from typing import Dict, Tuple
 from pathlib import Path
 
@@ -29,11 +30,14 @@ PORT = int(os.getenv('PORT', 8000))
 
 CLASS_NAMES = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
 
-RECYCLABLE_INFO: Dict[str, Tuple[bool, str]] = {
-    'cardboard': (True, "El cartón es reciclable y debe colocarse en el contenedor azul."),
-    'glass': (True, "El vidrio es reciclable, pero debe estar limpio y sin tapas."),
-    'metal': (True, "Los metales son reciclables y se pueden depositar en puntos específicos."),
-    'paper': (True, "El papel es reciclable siempre que no esté muy sucio."),
-    'plastic': (True, "El plástico es reciclable, pero algunos tipos requieren separación."),
-    'trash': (False, "Este material no es reciclable y debe ir a la basura común.")
-}
+def load_recyclable_info() -> Dict[str, Tuple[bool, str]]:
+    """Carga información de reciclabilidad desde recyclable_info.json"""
+    json_path = Path(__file__).parent / 'recyclable_info.json'
+    
+    with open(json_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    
+    return {key: (value['recyclable'], value['info']) for key, value in data.items()}
+
+# Cargar la información de reciclabilidad
+RECYCLABLE_INFO: Dict[str, Tuple[bool, str]] = load_recyclable_info()
