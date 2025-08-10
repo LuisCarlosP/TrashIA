@@ -10,7 +10,7 @@ pip install -r requirements.txt
 
 Run
 
-uvicorn app:app --reload
+python run.py
 
 .env
 HOST=0.0.0.0
