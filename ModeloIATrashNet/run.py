@@ -40,7 +40,7 @@ def main():
     logger.info(f"Recarga automática: Habilitada")
     
     if not model_exists:
-        logger.warning("⚠️  El servidor se iniciará pero las predicciones fallarán hasta que el modelo esté disponible")
+        logger.warning("El servidor se iniciará pero las predicciones fallarán")
     
     logger.info("=" * 60)
     
