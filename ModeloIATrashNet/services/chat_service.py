@@ -3,7 +3,7 @@ import google.generativeai as genai
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 
-from config.settings import GEMINI_API_KEY, CHAT_PROMPTS
+from config.settings import GEMINI_API_KEY, CHAT_PROMPTS, MATERIAL_TRANSLATIONS
 from exceptions.validation_exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
@@ -29,11 +29,22 @@ class ChatService:
         self.chat_sessions: Dict[str, Any] = {}
         logger.info("ChatService inicializado correctamente")
     
+    def _translate_material(self, material_type: str, language: str) -> str:
+        """
+        Traduce el nombre del material al idioma especificado
+        """
+        if language in MATERIAL_TRANSLATIONS:
+            return MATERIAL_TRANSLATIONS[language].get(material_type, material_type)
+        return material_type
+    
     def _is_on_topic(self, question: str) -> bool:
         """
         Verifica si la pregunta está relacionada con reciclaje y sostenibilidad
         usando palabras clave
         """
+        if len(question.split()) <= 3:
+            return True
+            
         question_lower = question.lower()
         keywords = CHAT_PROMPTS['topic_keywords']['on_topic']
         
@@ -96,8 +107,9 @@ class ChatService:
             }
             
             if material_context:
+                translated_material = self._translate_material(material_context.material_type, language)
                 welcome = CHAT_PROMPTS['welcome_message'][language].format(
-                    material_type=material_context.material_type
+                    material_type=translated_material
                 )
             else:
                 welcome = CHAT_PROMPTS['no_material_context'][language]
@@ -247,8 +259,9 @@ class ChatService:
         
         logger.info(f"Contexto de material actualizado para sesión: {session_id}")
         
+        translated_material = self._translate_material(material_context.material_type, language)
         welcome = CHAT_PROMPTS['welcome_message'][language].format(
-            material_type=material_context.material_type
+            material_type=translated_material
         )
         
         return {

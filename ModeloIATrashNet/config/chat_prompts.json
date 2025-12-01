@@ -8,12 +8,12 @@
     "es": "El usuario ha identificado el siguiente material mediante reconocimiento de imagen:\n- Tipo de Material: {material_type}\n- Reciclable: {is_recyclable}\n- Información Adicional: {material_info}\n\nUsa este contexto para responder las preguntas del usuario sobre este material específico. Proporciona información detallada y precisa sobre procesos de reciclaje, impacto ambiental y mejores prácticas para manejar este tipo de material."
   },
   "off_topic_response": {
-    "en": "I apologize, but I can only help with questions related to waste management, recycling, and environmental sustainability. Please ask me about the material you've identified, recycling processes, environmental impact, or proper disposal methods. How can I help you with recycling or waste management?",
-    "es": "Disculpa, pero solo puedo ayudar con preguntas relacionadas con gestión de residuos, reciclaje y sostenibilidad ambiental. Por favor pregúntame sobre el material que has identificado, procesos de reciclaje, impacto ambiental o métodos de disposición adecuados. ¿Cómo puedo ayudarte con reciclaje o gestión de residuos?"
+    "en": "I'd be happy to help! While my expertise is in waste management and recycling, I'll do my best to assist you. Could you tell me more about what you'd like to know regarding the material you've identified? I can help with recycling methods, environmental impact, disposal options, and sustainability tips.",
+    "es": "¡Con gusto te ayudo! Mi especialidad es la gestión de residuos y el reciclaje. ¿Podrías contarme más sobre lo que quieres saber del material que identificaste? Puedo ayudarte con métodos de reciclaje, impacto ambiental, opciones de disposición y consejos de sostenibilidad."
   },
   "welcome_message": {
-    "en": "Hello! I'm your recycling assistant. I see you've identified a {material_type} material. Feel free to ask me any questions about:\n- How to recycle this material\n- Environmental impact\n- Proper disposal methods\n- Alternative uses or upcycling ideas\n- Composting (if applicable)\n\nWhat would you like to know?",
-    "es": "¡Hola! Soy tu asistente de reciclaje. Veo que has identificado un material de tipo {material_type}. No dudes en preguntarme sobre:\n- Cómo reciclar este material\n- Impacto ambiental\n- Métodos de disposición adecuados\n- Usos alternativos o ideas de upcycling\n- Compostaje (si aplica)\n\n¿Qué te gustaría saber?"
+    "en": "Hello! I'm your recycling assistant. I see you've identified a {material_type} material. Feel free to ask me any questions about:\n- How to recycle this material\n- Environmental impact\n- Proper disposal methods\n- Alternative uses\n- Composting (if applicable)\n\nWhat would you like to know?",
+    "es": "¡Hola! Soy tu asistente de reciclaje. Veo que has identificado un material de tipo {material_type}. No dudes en preguntarme sobre:\n- Cómo reciclar este material\n- Impacto ambiental\n- Métodos de disposición adecuados\n- Usos alternativos\n- Compostaje (si aplica)\n\n¿Qué te gustaría saber?"
   },
   "no_material_context": {
     "en": "Please upload an image first to identify the material. Once you've done that, I can answer your questions about recycling and proper disposal of that specific material.",

@@ -32,6 +32,25 @@ PORT = int(os.getenv('PORT', 8000))
 
 CLASS_NAMES = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
 
+MATERIAL_TRANSLATIONS = {
+    'en': {
+        'cardboard': 'cardboard',
+        'glass': 'glass',
+        'metal': 'metal',
+        'paper': 'paper',
+        'plastic': 'plastic',
+        'trash': 'trash'
+    },
+    'es': {
+        'cardboard': 'cartón',
+        'glass': 'vidrio',
+        'metal': 'metal',
+        'paper': 'papel',
+        'plastic': 'plástico',
+        'trash': 'basura'
+    }
+}
+
 def load_recyclable_info() -> Dict[str, Tuple[bool, str]]:
     """Carga información de reciclabilidad desde recyclable_info.json"""
     json_path = Path(__file__).parent / 'recyclable_info.json'
