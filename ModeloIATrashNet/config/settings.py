@@ -23,7 +23,7 @@ IMAGE_HEIGHT = 224
 
 MODEL_PATH = os.getenv('MODEL_PATH', 'models/modelo_basura.h5')
 
-ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'http://localhost:8080').split(',')
+ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'http://localhost:8080,https://luiscarlosp.github.io').split(',')
 
 HOST = os.getenv('HOST', '0.0.0.0')
 PORT = int(os.getenv('PORT', 8000))
