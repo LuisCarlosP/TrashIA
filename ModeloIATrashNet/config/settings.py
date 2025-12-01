@@ -25,6 +25,8 @@ MODEL_PATH = os.getenv('MODEL_PATH', 'models/modelo_basura.h5')
 
 ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'http://localhost:8080,https://luiscarlosp.github.io').split(',')
 
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+
 HOST = os.getenv('HOST', '0.0.0.0')
 PORT = int(os.getenv('PORT', 8000))
 
@@ -39,5 +41,15 @@ def load_recyclable_info() -> Dict[str, Tuple[bool, str]]:
     
     return {key: (value['recyclable'], value['info']) for key, value in data.items()}
 
+def load_chat_prompts() -> Dict:
+    """Carga los prompts del chat desde chat_prompts.json"""
+    json_path = Path(__file__).parent / 'chat_prompts.json'
+    
+    with open(json_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
 # Cargar la información de reciclabilidad
 RECYCLABLE_INFO: Dict[str, Tuple[bool, str]] = load_recyclable_info()
+
+# Cargar los prompts del chat
+CHAT_PROMPTS: Dict = load_chat_prompts()

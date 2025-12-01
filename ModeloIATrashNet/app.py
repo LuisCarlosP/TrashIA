@@ -7,6 +7,7 @@ from slowapi.errors import RateLimitExceeded
 
 from config.settings import ALLOWED_ORIGINS
 from routes.prediction import router as prediction_router
+from routes.chat import router as chat_router
 from core.dependencies import get_prediction_service
 
 logging.basicConfig(level=logging.INFO)
@@ -34,6 +35,7 @@ app.add_middleware(
 )
 
 app.include_router(prediction_router)
+app.include_router(chat_router)
 
 @app.get("/")
 async def root():
@@ -43,6 +45,7 @@ async def root():
         "endpoints": {
             "health": "/health",
             "predict": "/predict",
+            "chat": "/chat",
             "docs": "/docs"
         }
     }

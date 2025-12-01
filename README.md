@@ -1,13 +1,13 @@
-# TrashIA - Clasificador de Basura con IA 🗑️♻️
+# TrashIA - Clasificador de Basura con IA
 
 API de FastAPI con TensorFlow para clasificar tipos de basura y determinar reciclabilidad.
 
-## 📋 Requisitos
+## Requisitos
 
 - Python 3.11.9
 - pip
 
-## 🚀 Instalación Local
+## Instalación Local
 
 ### 1. Crear entorno virtual
 ```bash
