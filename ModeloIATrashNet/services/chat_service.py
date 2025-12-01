@@ -25,7 +25,7 @@ class ChatService:
             raise ValueError("GEMINI_API_KEY debe estar configurada en las variables de entorno")
         
         genai.configure(api_key=GEMINI_API_KEY)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
         self.chat_sessions: Dict[str, Any] = {}
         logger.info("ChatService inicializado correctamente")
     
