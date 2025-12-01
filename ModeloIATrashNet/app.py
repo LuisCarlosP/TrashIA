@@ -25,6 +25,18 @@ app.add_middleware(
 
 app.include_router(prediction_router)
 
+@app.get("/")
+async def root():
+    return {
+        "message": "Bienvenido a TrashIA - Clasificador de Basura",
+        "version": "1.0.0",
+        "endpoints": {
+            "health": "/health",
+            "predict": "/predict",
+            "docs": "/docs"
+        }
+    }
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "message": "API funcionando correctamente"}
