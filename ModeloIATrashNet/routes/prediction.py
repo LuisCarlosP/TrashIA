@@ -1,26 +1,54 @@
 import logging
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
+import magic
+from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from core.dependencies import get_prediction_service, PredictionService
 from exceptions import ModelLoadError, PredictionError, ImageProcessingError, ValidationError
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
+limiter = Limiter(key_func=get_remote_address)
+
+# Tamaño máximo de archivo: 5MB
+MAX_FILE_SIZE = 5 * 1024 * 1024
+ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/jpg']
 
 @router.post("/predict")
+@limiter.limit("10/minute")
 async def predict(
+    request: Request,
     file: UploadFile = File(...),
     prediction_service: PredictionService = Depends(get_prediction_service)
 ):
     try:
+        # Leer contenido del archivo
+        file_bytes = await file.read()
+        
+        # Validar tamaño del archivo
+        if len(file_bytes) > MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=413,
+                detail=f"El archivo excede el tamaño máximo permitido de {MAX_FILE_SIZE // (1024*1024)}MB"
+            )
+        
+        # Validar tipo MIME real del contenido
+        mime = magic.from_buffer(file_bytes, mime=True)
+        if mime not in ALLOWED_MIME_TYPES:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Tipo de archivo no permitido. Solo se aceptan: {', '.join(ALLOWED_MIME_TYPES)}"
+            )
+        
+        # Validar content-type del header
         if not file.content_type or not file.content_type.startswith('image/'):
             raise HTTPException(
                 status_code=400, 
                 detail="El archivo debe ser una imagen válida"
             )
         
-        file_bytes = await file.read()
         response_data = await prediction_service.predict_image(file_bytes, file.filename)
         
         logger.info(f"Predicción exitosa para archivo: {file.filename}")

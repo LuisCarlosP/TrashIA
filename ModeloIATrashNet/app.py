@@ -1,6 +1,9 @@
 import logging
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from config.settings import ALLOWED_ORIGINS
 from routes.prediction import router as prediction_router
@@ -9,11 +12,18 @@ from core.dependencies import get_prediction_service
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Configurar rate limiting
+limiter = Limiter(key_func=get_remote_address)
+
 app = FastAPI(
     title="Clasificador de Basura IA",
     description="API para clasificar tipos de basura y determinar reciclabilidad",
     version="1.0.0"
 )
+
+# Agregar rate limiter al state
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 app.add_middleware(
     CORSMiddleware,
