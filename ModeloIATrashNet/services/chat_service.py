@@ -169,7 +169,12 @@ class ChatService:
             
             full_message = f"{system_context}\n\nUser question: {message}"
             
-            response = chat.send_message(full_message)
+            # Configuración para limitar la respuesta a aproximadamente 150 palabras
+            generation_config = genai.GenerationConfig(
+                max_output_tokens=200  # Aproximadamente 150 palabras
+            )
+            
+            response = chat.send_message(full_message, generation_config=generation_config)
             response_text = response.text
             
             session["history"].append({
