@@ -150,23 +150,6 @@ class ChatService:
             language = session["language"]
             system_context = session["system_context"]
             
-            if not self._is_on_topic(message):
-                off_topic = CHAT_PROMPTS['off_topic_response'][language]
-                session["history"].append({
-                    "role": "user",
-                    "content": message
-                })
-                session["history"].append({
-                    "role": "assistant",
-                    "content": off_topic
-                })
-                
-                return {
-                    "response": off_topic,
-                    "session_id": session_id,
-                    "on_topic": False
-                }
-            
             full_message = f"{system_context}\n\nUser question: {message}"
             
             # Configuración para limitar la respuesta a aproximadamente 150 palabras
