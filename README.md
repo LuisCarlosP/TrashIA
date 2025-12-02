@@ -126,8 +126,8 @@ ModeloIATrashNet/
 │   ├── model_exceptions.py
 │   └── validation_exceptions.py
 ├── models/
-│   ├── modelo_basura.h5   # Main TensorFlow model
-│   └── TrashIAv2.h5       # Alternative model
+│   ├── modelo_basura.h5   # Alternative TensorFlow model
+│   └── TrashIAv2.h5       # Main model
 ├── routes/
 │   ├── prediction.py      # Prediction routes
 │   └── chat.py            # Chat routes
