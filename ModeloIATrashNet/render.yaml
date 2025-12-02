@@ -12,7 +12,7 @@ services:
       - key: PORT
         value: 8000
       - key: MODEL_PATH
-        value: models/modelo_basura.h5
+        value: models/TrashIAv2.h5
       - key: ALLOWED_ORIGINS
         value: "*" 
     healthCheckPath: /health
