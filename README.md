@@ -1,20 +1,37 @@
-# TrashIA - Clasificador de Basura con IA
+# TrashIA - AI Trash Classifier
 
-API de FastAPI con TensorFlow para clasificar tipos de basura y determinar reciclabilidad.
+REST API built with FastAPI and TensorFlow to classify types of trash, determine recyclability, and provide AI-powered chat assistance.
 
-## Requisitos
+## Features
+
+- Image classification into 6 categories: cardboard, glass, metal, paper, plastic, and general trash
+- Automatic recyclability determination
+- Interactive AI chat (Google Gemini) for recycling queries
+- Rate limiting for API protection
+- Multi-language support (English/Spanish)
+- File validation by MIME type
+- Automatic documentation with Swagger/OpenAPI
+
+## Requirements
 
 - Python 3.11.9
 - pip
+- Google Gemini API key (optional, for chat functionality)
 
-## Instalación Local
+## Local Installation
 
-### 1. Crear entorno virtual
+### 1. Clone the repository
+```bash
+git clone https://github.com/LuisCarlosP/TrashIA.git
+cd TrashIA
+```
+
+### 2. Create virtual environment
 ```bash
 python -m venv venv
 ```
 
-### 2. Activar entorno virtual
+### 3. Activate virtual environment
 ```bash
 # Windows
 .\venv\Scripts\activate
@@ -23,56 +40,119 @@ python -m venv venv
 source venv/bin/activate
 ```
 
-### 3. Instalar dependencias
+### 4. Install dependencies
 ```bash
+cd ModeloIATrashNet
 pip install -r requirements.txt
 ```
 
-### 4. Configurar variables de entorno
-Crea un archivo `.env` en `ModeloIATrashNet/`:
+### 5. Configure environment variables
+Create a `.env` file in `ModeloIATrashNet/`:
 ```env
 HOST=0.0.0.0
 PORT=8000
 MODEL_PATH=models/modelo_basura.h5
-ALLOWED_ORIGINS=http://localhost:8080
+ALLOWED_ORIGINS=http://localhost:8080,https://luiscarlosp.github.io
+GEMINI_API_KEY=use_your_gemini_api_key
 ```
 
-### 5. Ejecutar la aplicación
+### 6. Run the application
 ```bash
-cd ModeloIATrashNet
 python run.py
 ```
 
-La API estará disponible en: `http://localhost:8000`
+The API will be available at: `http://localhost:8000`
 
-### Endpoints disponibles:
-- `GET /health` - Verificar estado de la API
-- `POST /predict` - Clasificar imagen de basura
+## Endpoints
 
-## Estructura del Proyecto
+### General
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/` | API information and available endpoints |
+| GET | `/health` | Check API status |
+| GET | `/docs` | Interactive Swagger UI documentation |
+
+### Prediction
+| Method | Endpoint | Description | Rate Limit |
+|--------|----------|-------------|------------|
+| POST | `/predict` | Classify trash image | 10/minute |
+
+**Parameters for `/predict`:**
+- `file`: Image (JPEG, PNG) - Maximum 5MB
+
+**Successful response:**
+```json
+{
+  "material_type": "plastic",
+  "is_recyclable": true,
+  "confidence": 0.95,
+  "material_info": "Information about the material"
+}
+```
+
+### Chat
+| Method | Endpoint | Description | Rate Limit |
+|--------|----------|-------------|------------|
+| POST | `/chat/session` | Create chat session | - |
+| POST | `/chat/message` | Send message to chat | - |
+| DELETE | `/chat/session/{session_id}` | Delete session | - |
+
+## Classification Categories
+
+| Category | Recyclable | Description |
+|----------|------------|-------------|
+| cardboard | Yes | Cardboard and boxes |
+| glass | Yes | Glass and crystal |
+| metal | Yes | Metals and cans |
+| paper | Yes | Paper and documents |
+| plastic | Yes | Plastics |
+| trash | No | General non-recyclable waste |
+
+## Project Structure
 
 ```
 ModeloIATrashNet/
-├── app.py                 # Aplicación FastAPI
-├── run.py                 # Script de inicio
-├── requirements.txt       # Dependencias
-├── Dockerfile            # Configuración Docker
-├── render.yaml           # Configuración Render
-├── .dockerignore         # Exclusiones Docker
-├── config/               # Configuración
-├── core/                 # Dependencias centrales
-├── exceptions/           # Excepciones personalizadas
-├── models/               # Modelo ML (.h5)
-├── routes/               # Rutas API
-├── services/             # Lógica de negocio
-└── scripts/              # Scripts de prueba
+├── app.py                 # Main FastAPI application
+├── run.py                 # Startup script
+├── requirements.txt       # Python dependencies
+├── config/
+│   ├── settings.py        # Configuration and environment variables
+│   ├── chat_prompts.json  # AI chat prompts
+│   └── recyclable_info.json # Material information
+├── core/
+│   └── dependencies.py    # Dependency injection
+├── exceptions/
+│   ├── image_exceptions.py
+│   ├── model_exceptions.py
+│   └── validation_exceptions.py
+├── models/
+│   ├── modelo_basura.h5   # Main TensorFlow model
+│   └── TrashIAv2.h5       # Alternative model
+├── routes/
+│   ├── prediction.py      # Prediction routes
+│   └── chat.py            # Chat routes
+├── services/
+│   ├── trash_services.py  # Classification logic
+│   └── chat_service.py    # Gemini chat logic
+└── scripts/
+    └── test_model.py      # Test scripts
 ```
 
-## Tecnologías
+## Technologies
 
-- **FastAPI** - Framework web
-- **TensorFlow/Keras** - Modelo de clasificación
-- **Uvicorn** - Servidor ASGI
-- **Pillow** - Procesamiento de imágenes
-- **Pydantic** - Validación de datos
+| Technology | Version | Usage |
+|------------|---------|-------|
+| FastAPI | 0.116.1 | Web framework |
+| TensorFlow | 2.19.0 | Classification model |
+| Keras | 3.10.0 | Neural network API |
+| Uvicorn | 0.35.0 | ASGI server |
+| Pillow | 11.3.0 | Image processing |
+| Pydantic | 2.11.7 | Data validation |
+| Google Generative AI | 0.8.3 | Gemini chat |
+| SlowAPI | 0.1.9 | Rate limiting |
+| python-magic | 0.4.27 | MIME validation |
+
+## License
+
+This project is open source.
 
