@@ -97,6 +97,16 @@ The API will be available at: `http://localhost:8000`
 | POST | `/chat/message` | Send message to chat | - |
 | DELETE | `/chat/session/{session_id}` | Delete session | - |
 
+### Location
+| Method | Endpoint | Description | Rate Limit |
+|--------|----------|-------------|------------|
+| GET | `/location/recycling-points` | Get nearby recycling points | 30/minute |
+
+**Parameters for `/location/recycling-points`:**
+- `latitude`: Latitude (-90 to 90)
+- `longitude`: Longitude (-180 to 180)
+- `radius`: Search radius in meters (100 to 50000, default: 5000)
+
 ## Classification Categories
 
 | Category | Recyclable | Description |
@@ -130,10 +140,12 @@ ModeloIATrashNet/
 │   └── TrashIAv2.h5       # Main model
 ├── routes/
 │   ├── prediction.py      # Prediction routes
-│   └── chat.py            # Chat routes
+│   ├── chat.py            # Chat routes
+│   └── location.py        # Location/recycling points routes
 ├── services/
 │   ├── trash_services.py  # Classification logic
-│   └── chat_service.py    # Gemini chat logic
+│   ├── chat_service.py    # Gemini chat logic
+│   └── location_service.py # OpenStreetMap integration
 └── scripts/
     └── test_model.py      # Test scripts
 ```
@@ -151,6 +163,8 @@ ModeloIATrashNet/
 | Google Generative AI | 0.8.3 | Gemini chat |
 | SlowAPI | 0.1.9 | Rate limiting |
 | python-magic | 0.4.27 | MIME validation |
+| httpx | 0.28.1 | HTTP client (OpenStreetMap) |
+| python-dotenv | 1.1.1 | Environment variables |
 
 ## License
 
