@@ -93,19 +93,34 @@ The API will be available at: `http://localhost:8000`
 ### Chat
 | Method | Endpoint | Description | Rate Limit |
 |--------|----------|-------------|------------|
-| POST | `/chat/session` | Create chat session | - |
-| POST | `/chat/message` | Send message to chat | - |
-| DELETE | `/chat/session/{session_id}` | Delete session | - |
+| POST | `/chat/session` | Create chat session | 20/minute |
+| POST | `/chat/message` | Send message to chat | 30/minute |
+| GET | `/chat/history/{session_id}` | Get conversation history | 20/minute |
+| PUT | `/chat/material` | Update material context | 20/minute |
+| DELETE | `/chat/session/{session_id}` | Delete session | 10/minute |
+
+**Parameters for `/chat/session`:**
+- `material_type`: (optional) Identified material type
+- `is_recyclable`: (optional) Whether the material is recyclable
+- `material_info`: (optional) Additional material information
+- `language`: Chat language (`en`/`es`, default: `en`)
+
+**Parameters for `/chat/message`:**
+- `session_id`: Chat session ID
+- `message`: User message
 
 ### Location
 | Method | Endpoint | Description | Rate Limit |
 |--------|----------|-------------|------------|
 | GET | `/location/recycling-points` | Get nearby recycling points | 30/minute |
+| POST | `/location/recycling-points/search` | Search recycling points (POST) | 30/minute |
+| GET | `/location/health` | Location service health check | - |
 
 **Parameters for `/location/recycling-points`:**
 - `latitude`: Latitude (-90 to 90)
 - `longitude`: Longitude (-180 to 180)
 - `radius`: Search radius in meters (100 to 50000, default: 5000)
+- `types`: (optional) Filter by recycling point types
 
 ## Classification Categories
 
