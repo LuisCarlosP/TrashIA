@@ -15,7 +15,6 @@ from models.location_models import RecyclingPoint, Coordinates
 
 logger = logging.getLogger(__name__)
 
-# Cache simple en memoria
 _cache: Dict[str, tuple] = {}
 CACHE_TTL = timedelta(minutes=30)
 
@@ -24,7 +23,6 @@ OVERPASS_API_URL = "https://overpass-api.de/api/interpreter"
 
 def _get_cache_key(lat: float, lon: float, radius: int) -> str:
     """Genera una clave de cache basada en coordenadas redondeadas."""
-    # Redondear a 2 decimales para agrupar búsquedas cercanas
     return f"{round(lat, 2)}_{round(lon, 2)}_{radius}"
 
 
@@ -67,7 +65,6 @@ def _parse_recycling_types(tags: Dict[str, str]) -> List[str]:
     """
     types = []
     
-    # Mapeo de tags OSM a tipos normalizados
     type_mapping = {
         'recycling:plastic': 'plastic',
         'recycling:plastic_bottles': 'plastic',
@@ -99,7 +96,6 @@ def _parse_recycling_types(tags: Dict[str, str]) -> List[str]:
         if tags.get(tag) == 'yes' and material_type not in types:
             types.append(material_type)
     
-    # Si no hay tipos específicos, inferir del tipo de amenidad
     if not types:
         amenity = tags.get('amenity', '')
         recycling_type = tags.get('recycling_type', '')
@@ -119,19 +115,16 @@ def _parse_osm_element(element: Dict[str, Any], user_lat: float, user_lon: float
     try:
         tags = element.get('tags', {})
         
-        # Obtener coordenadas
         if element['type'] == 'node':
             lat = element['lat']
             lon = element['lon']
         else:
-            # Para ways y relations, usar el centro
             center = element.get('center', {})
             lat = center.get('lat')
             lon = center.get('lon')
             if not lat or not lon:
                 return None
         
-        # Construir nombre
         name = tags.get('name', '')
         if not name:
             operator = tags.get('operator', '')
@@ -141,7 +134,6 @@ def _parse_osm_element(element: Dict[str, Any], user_lat: float, user_lon: float
             else:
                 name = f"Punto de Reciclaje ({recycling_type.title()})"
         
-        # Construir dirección
         address_parts = []
         if tags.get('addr:street'):
             street = tags['addr:street']
@@ -152,7 +144,6 @@ def _parse_osm_element(element: Dict[str, Any], user_lat: float, user_lon: float
             address_parts.append(tags['addr:city'])
         address = ', '.join(address_parts) if address_parts else None
         
-        # Calcular distancia
         distance = calculate_distance(user_lat, user_lon, lat, lon)
         
         return RecyclingPoint(
@@ -176,7 +167,7 @@ def _parse_osm_element(element: Dict[str, Any], user_lat: float, user_lon: float
 async def fetch_recycling_points(
     latitude: float,
     longitude: float,
-    radius: int = 5000,
+    radius: int = 2000,
     types_filter: Optional[List[str]] = None
 ) -> List[RecyclingPoint]:
     """
@@ -193,13 +184,11 @@ async def fetch_recycling_points(
     """
     cache_key = _get_cache_key(latitude, longitude, radius)
     
-    # Verificar cache
     if cache_key in _cache and _is_cache_valid(_cache[cache_key]):
         logger.info(f"Cache hit for {cache_key}")
-        cached_points, _ = _cache[cache_key]
-        points = cached_points
+        cached_elements, _ = _cache[cache_key]
+        elements = cached_elements
     else:
-        # Construir query Overpass
         query = f"""
         [out:json][timeout:25];
         (
@@ -211,46 +200,62 @@ async def fetch_recycling_points(
         out center tags;
         """
         
-        try:
-            async with httpx.AsyncClient(timeout=30.0) as client:
-                response = await client.post(
-                    OVERPASS_API_URL,
-                    data={'data': query},
-                    headers={'Content-Type': 'application/x-www-form-urlencoded'}
-                )
-                response.raise_for_status()
-                data = response.json()
-        except httpx.TimeoutException:
-            logger.error("Timeout al consultar Overpass API")
-            raise Exception("La búsqueda tardó demasiado. Intente con un radio menor.")
-        except httpx.HTTPStatusError as e:
-            logger.error(f"Error HTTP de Overpass API: {e}")
-            raise Exception("Error al consultar el servicio de mapas.")
-        except Exception as e:
-            logger.error(f"Error al consultar Overpass API: {e}")
-            raise Exception("No se pudo obtener información de puntos de reciclaje.")
+        # Lista de servidores Overpass para reintentos
+        overpass_servers = [
+            "https://overpass-api.de/api/interpreter",
+            "https://overpass.kumi.systems/api/interpreter",
+            "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
+        ]
+        
+        data = None
+        last_error = None
+        
+        for server_url in overpass_servers:
+            try:
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    response = await client.post(
+                        server_url,
+                        data={'data': query},
+                        headers={'Content-Type': 'application/x-www-form-urlencoded'}
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                    logger.info(f"Consulta exitosa a {server_url}")
+                    break
+            except httpx.TimeoutException as e:
+                logger.warning(f"Timeout en {server_url}: {e}")
+                last_error = e
+                continue
+            except httpx.HTTPStatusError as e:
+                logger.warning(f"Error HTTP {e.response.status_code} en {server_url}: {e}")
+                last_error = e
+                continue
+            except Exception as e:
+                logger.warning(f"Error en {server_url}: {e}")
+                last_error = e
+                continue
+        
+        if data is None:
+            logger.error(f"Todos los servidores Overpass fallaron. Último error: {last_error}")
+            raise Exception("No se pudo conectar al servicio de mapas. Intente de nuevo.")
         
         elements = data.get('elements', [])
         logger.info(f"Encontrados {len(elements)} elementos en OSM")
         
-        # Parsear elementos
-        points = []
-        for element in elements:
-            point = _parse_osm_element(element, latitude, longitude)
-            if point:
-                points.append(point)
-        
-        # Guardar en cache
-        _cache[cache_key] = (points, datetime.now())
+        _cache[cache_key] = (elements, datetime.now())
     
-    # Aplicar filtro de tipos si se especifica
+    points = []
+    for element in elements:
+        point = _parse_osm_element(element, latitude, longitude)
+        if point:
+            points.append(point)
+    
     if types_filter:
         points = [
             p for p in points
             if any(t in p.types for t in types_filter) or 'general' in p.types
         ]
     
-    # Ordenar por distancia
     points.sort(key=lambda p: p.distance or float('inf'))
     
     logger.info(f"Retornando {len(points)} puntos de reciclaje")
@@ -278,7 +283,7 @@ class LocationService:
         self,
         latitude: float,
         longitude: float,
-        radius: int = 5000,
+        radius: int = 2000,
         types_filter: Optional[List[str]] = None
     ) -> List[RecyclingPoint]:
         """Obtiene puntos de reciclaje cercanos."""

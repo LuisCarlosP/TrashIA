@@ -52,7 +52,7 @@ async def get_recycling_points(
     request: Request,
     latitude: float = Query(..., ge=-90, le=90, description="Latitud del centro de búsqueda"),
     longitude: float = Query(..., ge=-180, le=180, description="Longitud del centro de búsqueda"),
-    radius: int = Query(5000, ge=100, le=50000, description="Radio de búsqueda en metros"),
+    radius: int = Query(2000, ge=100, le=50000, description="Radio de búsqueda en metros"),
     types: Optional[str] = Query(
         None,
         description="Tipos de materiales separados por coma (plastic,glass,paper,metal,cardboard,electronics,batteries)"
