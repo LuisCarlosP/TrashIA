@@ -9,6 +9,7 @@ from config.settings import ALLOWED_ORIGINS
 from routes.prediction import router as prediction_router
 from routes.chat import router as chat_router
 from routes.location import router as location_router
+from routes.barcode import router as barcode_router
 from core.dependencies import get_prediction_service
 
 logging.basicConfig(level=logging.INFO)
@@ -38,6 +39,7 @@ app.add_middleware(
 app.include_router(prediction_router)
 app.include_router(chat_router)
 app.include_router(location_router)
+app.include_router(barcode_router)
 
 @app.get("/")
 async def root():
@@ -49,6 +51,7 @@ async def root():
             "predict": "/predict",
             "chat": "/chat",
             "location": "/location/recycling-points",
+            "barcode": "/barcode/{code}",
             "docs": "/docs"
         }
     }
