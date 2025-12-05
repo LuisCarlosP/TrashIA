@@ -48,12 +48,12 @@ source venv/bin/activate
 
 ### 4. Install dependencies
 ```bash
-cd ModeloIATrashNet
+cd TrashIABackend
 pip install -r requirements.txt
 ```
 
 ### 5. Configure environment variables
-Create a `.env` file in `ModeloIATrashNet/`:
+Create a `.env` file in `TrashIABackend/`:
 ```env
 HOST=0.0.0.0
 PORT=8000
@@ -152,7 +152,7 @@ All endpoints (except `/health` and `/docs`) require authentication via header:
 ## Project Structure
 
 ```
-ModeloIATrashNet/
+TrashIABackend/
 ├── app.py                 # Main FastAPI application
 ├── run.py                 # Startup script
 ├── requirements.txt       # Python dependencies
