@@ -12,6 +12,11 @@ import asyncio
 from datetime import datetime, timedelta
 
 from models.location_models import RecyclingPoint, Coordinates
+import pybreaker
+
+# Circuit Breaker configuration
+# Opens after 5 failures, stays open for 60 seconds
+overpass_breaker = pybreaker.CircuitBreaker(fail_max=5, reset_timeout=60)
 
 logger = logging.getLogger(__name__)
 
@@ -213,11 +218,15 @@ async def fetch_recycling_points(
         for server_url in overpass_servers:
             try:
                 async with httpx.AsyncClient(timeout=30.0) as client:
-                    response = await client.post(
-                        server_url,
-                        data={'data': query},
-                        headers={'Content-Type': 'application/x-www-form-urlencoded'}
-                    )
+                    @overpass_breaker
+                    async def make_request():
+                        return await client.post(
+                            server_url,
+                            data={'data': query},
+                            headers={'Content-Type': 'application/x-www-form-urlencoded'}
+                        )
+                    
+                    response = await make_request()
                     response.raise_for_status()
                     data = response.json()
                     logger.info(f"Consulta exitosa a {server_url}")
@@ -228,6 +237,10 @@ async def fetch_recycling_points(
                 continue
             except httpx.HTTPStatusError as e:
                 logger.warning(f"Error HTTP {e.response.status_code} en {server_url}: {e}")
+                last_error = e
+                continue
+            except pybreaker.CircuitBreakerError as e:
+                logger.warning(f"Circuit breaker open for {server_url}: {e}")
                 last_error = e
                 continue
             except Exception as e:

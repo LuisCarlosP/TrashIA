@@ -1,6 +1,11 @@
 import logging
 from typing import Optional, Dict, Any
 import httpx
+import pybreaker
+
+# Circuit Breakers
+off_breaker = pybreaker.CircuitBreaker(fail_max=5, reset_timeout=60)
+upc_breaker = pybreaker.CircuitBreaker(fail_max=5, reset_timeout=60)
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +92,11 @@ async def fetch_from_upcitemdb(barcode: str) -> Optional[Dict[str, Any]]:
     """Consulta la API de prueba de UPCitemdb."""
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(f"{UPCITEMDB_URL}?upc={barcode}")
+            @upc_breaker
+            async def make_upc_request():
+                return await client.get(f"{UPCITEMDB_URL}?upc={barcode}")
+            
+            response = await make_upc_request()
             response.raise_for_status()
             data = response.json()
 
@@ -103,6 +112,9 @@ async def fetch_from_upcitemdb(barcode: str) -> Optional[Dict[str, Any]]:
                     "categories": item.get("category", ""),
                     "source": "upcitemdb"
                 }
+
+    except pybreaker.CircuitBreakerError:
+        logger.warning(f"Circuit breaker open for UPCitemdb {barcode}")
     except Exception as e:
         logger.warning(f"UPCitemdb falló para {barcode}: {e}")
 
@@ -113,7 +125,11 @@ async def fetch_product_by_barcode(barcode: str) -> Optional[Dict[str, Any]]:
 
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(f"{OPEN_FOOD_FACTS_URL}/{barcode}.json")
+            @off_breaker
+            async def make_off_request():
+                return await client.get(f"{OPEN_FOOD_FACTS_URL}/{barcode}.json")
+            
+            response = await make_off_request()
             if response.status_code == 200:
                 data = response.json()
                 if data.get("status") == 1:
@@ -128,6 +144,9 @@ async def fetch_product_by_barcode(barcode: str) -> Optional[Dict[str, Any]]:
                         "categories": product.get("categories", ""),
                         "source": "openfoodfacts"
                     }
+
+    except pybreaker.CircuitBreakerError:
+        logger.warning(f"Circuit breaker open for OpenFoodFacts {barcode}")
     except Exception as e:
         logger.error(f"Error OpenFoodFacts {barcode}: {e}")
 

@@ -29,6 +29,10 @@ GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
 
 HOST = os.getenv('HOST', '0.0.0.0')
 PORT = int(os.getenv('PORT', 8000))
+ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
+
+API_KEY = os.getenv('API_KEY')
+REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 
 CLASS_NAMES = ['cardboard', 'glass', 'metal', 'paper', 'plastic', 'trash']
 
@@ -67,8 +71,6 @@ def load_chat_prompts() -> Dict:
     with open(json_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
-# Cargar la información de reciclabilidad
 RECYCLABLE_INFO: Dict[str, Tuple[bool, str]] = load_recyclable_info()
 
-# Cargar los prompts del chat
 CHAT_PROMPTS: Dict = load_chat_prompts()

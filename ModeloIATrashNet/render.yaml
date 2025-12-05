@@ -14,5 +14,21 @@ services:
       - key: MODEL_PATH
         value: models/TrashIAv2.h5
       - key: ALLOWED_ORIGINS
-        value: "*" 
+        value: "*"
+      - key: ENVIRONMENT
+        value: production
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: trashia-redis
+          property: connectionString
+      - key: API_KEY
+        generateValue: true 
     healthCheckPath: /health
+
+  - type: redis
+    name: trashia-redis
+    region: oregon
+    plan: free
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
