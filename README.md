@@ -11,12 +11,16 @@ REST API built with FastAPI and TensorFlow to classify types of trash, determine
 - Multi-language support (English/Spanish)
 - File validation by MIME type
 - Automatic documentation with Swagger/OpenAPI
+- **Security**: API Key authentication, Redis-based rate limiting, and Circuit Breakers
+
 
 ## Requirements
 
 - Python 3.11.9
 - pip
 - Google Gemini API key (optional, for chat functionality)
+- Redis (required for rate limiting)
+
 
 ## Local Installation
 
@@ -54,6 +58,11 @@ PORT=8000
 MODEL_PATH=models/modelo_basura.h5
 ALLOWED_ORIGINS=http://localhost:8080,https://luiscarlosp.github.io
 GEMINI_API_KEY=use_your_gemini_api_key
+# Security
+API_KEY=your_secret_api_key
+REDIS_URL=redis://localhost:6379/0
+ENVIRONMENT=development
+
 ```
 
 ### 6. Run the application
@@ -122,6 +131,11 @@ The API will be available at: `http://localhost:8000`
 - `radius`: Search radius in meters (100 to 50000, default: 5000)
 - `types`: (optional) Filter by recycling point types
 
+### Security
+All endpoints (except `/health` and `/docs`) require authentication via header:
+- `X-API-Key`: Your secret API key
+
+
 ## Classification Categories
 
 | Category | Recyclable | Description |
@@ -180,6 +194,9 @@ ModeloIATrashNet/
 | python-magic | 0.4.27 | MIME validation |
 | httpx | 0.28.1 | HTTP client (OpenStreetMap) |
 | python-dotenv | 1.1.1 | Environment variables |
+| Redis | 5.0.1 | Rate limiting storage |
+| pybreaker | 1.0.1 | Circuit breakers |
+
 
 ## License
 
