@@ -41,32 +41,24 @@ PACKAGING_RECYCLABILITY = {
 
 BIN_INFO = {
     "yellow": {
-        "es": "Contenedor Amarillo",
-        "en": "Yellow Bin",
-        "tip_es": "Limpia/Enjuaga el envase. Plásticos, latas y briks.",
-        "tip_en": "Clean/Rinse the container. Plastics, cans and briks."
+        "bin": "Yellow Bin",
+        "tip": "Clean/Rinse the container. Plastics, cans and briks."
     },
     "green": {
-        "es": "Contenedor Verde",
-        "en": "Green Bin",
-        "tip_es": "Retira tapas y corchos. Solo vidrio.",
-        "tip_en": "Remove caps and corks. Glass only."
+        "bin": "Green Bin",
+        "tip": "Remove caps and corks. Glass only."
     },
     "blue": {
-        "es": "Contenedor Azul",
-        "en": "Blue Bin",
-        "tip_es": "Aplana para ahorrar espacio. Papel y cartón.",
-        "tip_en": "Flatten to save space. Paper and cardboard."
+        "bin": "Blue Bin",
+        "tip": "Flatten to save space. Paper and cardboard."
     },
     "unknown": {
-        "es": "Consultar Empaque",
-        "en": "Check Packaging",
-        "tip_es": "No detectamos el material automáticamente. Revisa el empaque.",
-        "tip_en": "Material not detected automatically. Check the packaging."
+        "bin": "Check Packaging",
+        "tip": "Material not detected automatically. Check the packaging."
     }
 }
 
-def analyze_packaging(text_to_analyze: str, lang: str = "es") -> list:
+def analyze_packaging(text_to_analyze: str) -> list:
     if not text_to_analyze:
         return []
 
@@ -82,10 +74,11 @@ def analyze_packaging(text_to_analyze: str, lang: str = "es") -> list:
         bin_data = BIN_INFO.get(bin_type, BIN_INFO["unknown"])
 
         results.append({
-            "material": "Material Reciclable" if lang == "es" else "Recyclable Material",
+            "material": "Recyclable Material",
             "recyclable": True,
-            "bin": bin_data["es"] if lang == "es" else bin_data["en"],
-            "tip": bin_data["tip_es"] if lang == "es" else bin_data["tip_en"]
+            "bin": bin_data["bin"],
+            "tip": bin_data["tip"],
+            "bin_type": bin_type
         })
 
     return results
@@ -103,7 +96,7 @@ async def fetch_from_upcitemdb(barcode: str) -> Optional[Dict[str, Any]]:
                 return {
                     "found": True,
                     "barcode": barcode,
-                    "name": item.get("title", "Producto sin nombre"),
+                    "name": item.get("title", "Product without name"),
                     "brand": item.get("brand", ""),
                     "image_url": item.get("images", [None])[0],
                     "packaging": item.get("description", ""),
@@ -115,7 +108,7 @@ async def fetch_from_upcitemdb(barcode: str) -> Optional[Dict[str, Any]]:
 
     return None
 
-async def fetch_product_by_barcode(barcode: str, lang: str = "es") -> Optional[Dict[str, Any]]:
+async def fetch_product_by_barcode(barcode: str) -> Optional[Dict[str, Any]]:
     product_data = None
 
     try:
@@ -128,7 +121,7 @@ async def fetch_product_by_barcode(barcode: str, lang: str = "es") -> Optional[D
                     product_data = {
                         "found": True,
                         "barcode": barcode,
-                        "name": product.get(f"product_name_{lang}", product.get("product_name", "Producto sin nombre")),
+                        "name": product.get("product_name_en", product.get("product_name", "Product without name")),
                         "brand": product.get("brands", ""),
                         "image_url": product.get("image_url") or product.get("image_front_url"),
                         "packaging": product.get("packaging", "") or product.get("packaging_text", ""),
@@ -144,16 +137,16 @@ async def fetch_product_by_barcode(barcode: str, lang: str = "es") -> Optional[D
 
     if product_data:
         analysis_text = f"{product_data.get('packaging', '')} {product_data.get('categories', '')}"
-        recycling_info = analyze_packaging(analysis_text, lang)
+        recycling_info = analyze_packaging(analysis_text)
 
         if not recycling_info:
              default_bin = BIN_INFO["unknown"]
-             material_label = "Desconocido" if lang == "es" else "Unknown"
              recycling_info = [{
-                "material": material_label,
+                "material": "Unknown",
                 "recyclable": None,
                 "bin": None,
-                "tip": default_bin["tip_es"] if lang == "es" else default_bin["tip_en"]
+                "tip": default_bin["tip"],
+                "bin_type": "unknown"
             }]
 
         product_data["recycling_info"] = recycling_info
