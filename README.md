@@ -1,5 +1,7 @@
 # TrashIA - AI Trash Classifier
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/LuisCarlosP/TrashIA)
+
 REST API built with FastAPI and TensorFlow to classify types of trash, determine recyclability, and provide AI-powered chat assistance.
 
 ## Features
