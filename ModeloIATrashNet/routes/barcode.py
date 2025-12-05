@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, HTTPException, Request, Query
+from fastapi import APIRouter, HTTPException, Request
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -18,13 +18,12 @@ limiter = Limiter(key_func=get_remote_address)
 @limiter.limit("30/minute")
 async def get_product_by_barcode(
     request: Request,
-    barcode: str,
-    lang: str = Query("es", description="Idioma para los consejos (es/en)")
+    barcode: str
 ):
     if not barcode or len(barcode) < 8:
         raise HTTPException(status_code=400, detail="Código de barras inválido")
     
-    product = await fetch_product_by_barcode(barcode, lang)
+    product = await fetch_product_by_barcode(barcode)
     
     if not product:
         raise HTTPException(
