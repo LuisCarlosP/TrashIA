@@ -10,14 +10,9 @@
     "es": "<contexto_material>\nMaterial: {material_type}\nReciclable: {is_recyclable}\nNotas: {material_info}\n</contexto_material>\nUsa este contexto en silencio. No lo repitas al usuario."
   },
 
-  "off_topic_response": {
-    "en": "I specialize in recycling and waste management. Let's stay focused on materials and proper disposal.",
-    "es": "Me especializo en reciclaje y gestión de residuos. Mantengamos el enfoque en materiales y disposición adecuada."
-  },
-
   "welcome_message": {
-    "en": "Material: {material_type}. You may ask about recycling, disposal, environmental impact, or reuse.",
-    "es": "Material: {material_type}. Puedes preguntar sobre reciclaje, disposición, impacto ambiental o reutilización."
+    "en": "\n🌱 Welcome! 🌱\n\nYou've identified: {material_type}\n\nYou can ask me about:\n• How to recycle this material\n• Proper disposal methods\n• Environmental impact\n• Creative ways to reuse it\n",
+    "es": "\n🌱 ¡Bienvenido! 🌱\n\nHas identificado: {material_type}\n\nPuedes preguntarme sobre:\n• Cómo reciclar este material\n• Métodos de disposición adecuados\n• Impacto ambiental\n• Formas creativas de reutilizarlo\n"
   },
 
   "no_material_context": {
