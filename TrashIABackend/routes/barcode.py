@@ -12,8 +12,8 @@ limiter = Limiter(key_func=get_remote_address)
 
 @router.get(
     "/{barcode}",
-    summary="Buscar producto por código de barras",
-    description="Consulta Open Food Facts para obtener información del producto y su reciclabilidad"
+    summary="Search product by barcode",
+    description="Queries Open Food Facts to get product information and recyclability"
 )
 @limiter.limit("30/minute")
 async def get_product_by_barcode(
@@ -21,27 +21,27 @@ async def get_product_by_barcode(
     barcode: str
 ):
     if not barcode or len(barcode) < 8:
-        raise HTTPException(status_code=400, detail="Código de barras inválido")
+        raise HTTPException(status_code=400, detail="Invalid barcode")
     
     product = await fetch_product_by_barcode(barcode)
     
     if not product:
         raise HTTPException(
             status_code=404,
-            detail="Producto no encontrado. Intenta con otro código."
+            detail="Product not found. Try another code."
         )
     
-    logger.info(f"Producto encontrado: {product.get('name')} ({barcode})")
+    logger.info(f"Product found: {product.get('name')} ({barcode})")
     return product
 
 
 @router.get(
     "/health",
-    summary="Estado del servicio de códigos de barras"
+    summary="Barcode service status"
 )
 async def barcode_health():
     return {
         "status": "healthy",
         "service": "barcode",
-        "message": "Servicio de códigos de barras funcionando"
+        "message": "Barcode service working"
     }

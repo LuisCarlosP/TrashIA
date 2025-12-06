@@ -1,6 +1,6 @@
 """
-Servicio para manejar ubicaciones y puntos de reciclaje.
-Utiliza Overpass API para consultar OpenStreetMap.
+Service to handle locations and recycling points.
+Uses Overpass API to query OpenStreetMap.
 """
 
 import logging
@@ -27,12 +27,12 @@ OVERPASS_API_URL = "https://overpass-api.de/api/interpreter"
 
 
 def _get_cache_key(lat: float, lon: float, radius: int) -> str:
-    """Genera una clave de cache basada en coordenadas redondeadas."""
+    """Generates a cache key based on rounded coordinates."""
     return f"{round(lat, 2)}_{round(lon, 2)}_{radius}"
 
 
 def _is_cache_valid(cache_entry: tuple) -> bool:
-    """Verifica si una entrada de cache sigue siendo válida."""
+    """Checks if a cache entry is still valid."""
     if not cache_entry:
         return False
     _, timestamp = cache_entry
@@ -41,16 +41,16 @@ def _is_cache_valid(cache_entry: tuple) -> bool:
 
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """
-    Calcula la distancia entre dos puntos usando la fórmula de Haversine.
+    Calculates the distance between two points using the Haversine formula.
     
     Args:
-        lat1, lon1: Coordenadas del primer punto
-        lat2, lon2: Coordenadas del segundo punto
+        lat1, lon1: Coordinates of the first point
+        lat2, lon2: Coordinates of the second point
         
     Returns:
-        Distancia en metros
+        Distance in meters
     """
-    R = 6371e3  # Radio de la Tierra en metros
+    R = 6371e3  # Earth radius in meters
     
     phi1 = math.radians(lat1)
     phi2 = math.radians(lat2)
@@ -66,7 +66,7 @@ def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> fl
 
 def _parse_recycling_types(tags: Dict[str, str]) -> List[str]:
     """
-    Parsea los tags de OSM para extraer los tipos de materiales reciclables.
+    Parses OSM tags to extract recyclable material types.
     """
     types = []
     
@@ -115,7 +115,7 @@ def _parse_recycling_types(tags: Dict[str, str]) -> List[str]:
 
 def _parse_osm_element(element: Dict[str, Any], user_lat: float, user_lon: float) -> Optional[RecyclingPoint]:
     """
-    Convierte un elemento de OSM a RecyclingPoint.
+    Converts an OSM element to RecyclingPoint.
     """
     try:
         tags = element.get('tags', {})
@@ -137,7 +137,7 @@ def _parse_osm_element(element: Dict[str, Any], user_lat: float, user_lon: float
             if operator:
                 name = f"{operator} - {recycling_type.title()}"
             else:
-                name = f"Punto de Reciclaje ({recycling_type.title()})"
+                name = f"Recycling Point ({recycling_type.title()})"
         
         address_parts = []
         if tags.get('addr:street'):
@@ -176,16 +176,16 @@ async def fetch_recycling_points(
     types_filter: Optional[List[str]] = None
 ) -> List[RecyclingPoint]:
     """
-    Busca puntos de reciclaje cercanos usando Overpass API.
+    Searches for nearby recycling points using Overpass API.
     
     Args:
-        latitude: Latitud del centro de búsqueda
-        longitude: Longitud del centro de búsqueda
-        radius: Radio de búsqueda en metros
-        types_filter: Lista opcional de tipos de materiales para filtrar
+        latitude: Latitude of search center
+        longitude: Longitude of search center
+        radius: Search radius in meters
+        types_filter: Optional list of material types to filter
         
     Returns:
-        Lista de RecyclingPoint ordenados por distancia
+        List of RecyclingPoint sorted by distance
     """
     cache_key = _get_cache_key(latitude, longitude, radius)
     
@@ -205,7 +205,7 @@ async def fetch_recycling_points(
         out center tags;
         """
         
-        # Lista de servidores Overpass para reintentos
+        # List of Overpass servers for retries
         overpass_servers = [
             "https://overpass-api.de/api/interpreter",
             "https://overpass.kumi.systems/api/interpreter",
@@ -229,14 +229,14 @@ async def fetch_recycling_points(
                     response = await make_request()
                     response.raise_for_status()
                     data = response.json()
-                    logger.info(f"Consulta exitosa a {server_url}")
+                    logger.info(f"Successful query to {server_url}")
                     break
             except httpx.TimeoutException as e:
-                logger.warning(f"Timeout en {server_url}: {e}")
+                logger.warning(f"Timeout on {server_url}: {e}")
                 last_error = e
                 continue
             except httpx.HTTPStatusError as e:
-                logger.warning(f"Error HTTP {e.response.status_code} en {server_url}: {e}")
+                logger.warning(f"HTTP error {e.response.status_code} on {server_url}: {e}")
                 last_error = e
                 continue
             except pybreaker.CircuitBreakerError as e:
@@ -244,16 +244,16 @@ async def fetch_recycling_points(
                 last_error = e
                 continue
             except Exception as e:
-                logger.warning(f"Error en {server_url}: {e}")
+                logger.warning(f"Error on {server_url}: {e}")
                 last_error = e
                 continue
         
         if data is None:
-            logger.error(f"Todos los servidores Overpass fallaron. Último error: {last_error}")
-            raise Exception("No se pudo conectar al servicio de mapas. Intente de nuevo.")
+            logger.error(f"All Overpass servers failed. Last error: {last_error}")
+            raise Exception("Could not connect to map service. Please try again.")
         
         elements = data.get('elements', [])
-        logger.info(f"Encontrados {len(elements)} elementos en OSM")
+        logger.info(f"Found {len(elements)} elements in OSM")
         
         _cache[cache_key] = (elements, datetime.now())
     
@@ -271,19 +271,19 @@ async def fetch_recycling_points(
     
     points.sort(key=lambda p: p.distance or float('inf'))
     
-    logger.info(f"Retornando {len(points)} puntos de reciclaje")
+    logger.info(f"Returning {len(points)} recycling points")
     return points
 
 
 def clear_cache():
-    """Limpia la cache de puntos de reciclaje."""
+    """Clears the recycling points cache."""
     global _cache
     _cache = {}
-    logger.info("Cache de ubicaciones limpiada")
+    logger.info("Location cache cleared")
 
 
 class LocationService:
-    """Servicio singleton para operaciones de ubicación."""
+    """Singleton service for location operations."""
     
     _instance = None
     
@@ -299,7 +299,7 @@ class LocationService:
         radius: int = 2000,
         types_filter: Optional[List[str]] = None
     ) -> List[RecyclingPoint]:
-        """Obtiene puntos de reciclaje cercanos."""
+        """Gets nearby recycling points."""
         return await fetch_recycling_points(latitude, longitude, radius, types_filter)
     
     def calculate_distance(
@@ -307,7 +307,7 @@ class LocationService:
         from_coords: Coordinates,
         to_coords: Coordinates
     ) -> float:
-        """Calcula la distancia entre dos coordenadas."""
+        """Calculates the distance between two coordinates."""
         return calculate_distance(
             from_coords.latitude,
             from_coords.longitude,
@@ -317,5 +317,5 @@ class LocationService:
 
 
 def get_location_service() -> LocationService:
-    """Obtiene la instancia del servicio de ubicación."""
+    """Gets the location service instance."""
     return LocationService()

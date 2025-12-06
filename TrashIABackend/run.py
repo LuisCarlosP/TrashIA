@@ -1,6 +1,6 @@
 """
-Script de inicio para el servidor TrashIA.
-Utiliza la configuración definida en config/settings.py y el archivo .env
+Startup script for TrashIA server.
+Uses configuration defined in config/settings.py and .env file
 """
 import uvicorn
 import logging
@@ -16,31 +16,31 @@ logger = logging.getLogger(__name__)
 def validate_environment():
     model_path = Path(MODEL_PATH)
     if not model_path.exists():
-        logger.warning(f"Archivo del modelo no encontrado en: {MODEL_PATH}")
-        logger.warning("Asegúrate de que el archivo del modelo exista antes de ejecutar predicciones")
+        logger.warning(f"Model file not found at: {MODEL_PATH}")
+        logger.warning("Make sure the model file exists before running predictions")
         return False
     else:
-        logger.info(f"Archivo del modelo encontrado en: {MODEL_PATH}")
+        logger.info(f"Model file found at: {MODEL_PATH}")
         return True
 
 def main():
     """
-    Inicia el servidor uvicorn con la configuración del proyecto.
+    Starts the uvicorn server with project configuration.
     """
     logger.info("=" * 60)
-    logger.info("Iniciando servidor TrashIA...")
+    logger.info("Starting TrashIA server...")
     logger.info("=" * 60)
     
     model_exists = validate_environment()
     
-    # Mostrar configuración
+    # Show configuration
     logger.info(f"Host: {HOST}")
-    logger.info(f"Puerto: {PORT}")
-    logger.info(f"Modelo: {MODEL_PATH}")
-    logger.info(f"Recarga automática: Habilitada")
+    logger.info(f"Port: {PORT}")
+    logger.info(f"Model: {MODEL_PATH}")
+    logger.info(f"Auto-reload: Enabled")
     
     if not model_exists:
-        logger.warning("El servidor se iniciará pero las predicciones fallarán")
+        logger.warning("Server will start but predictions will fail")
     
     logger.info("=" * 60)
     
@@ -53,9 +53,9 @@ def main():
             log_level="info"
         )
     except KeyboardInterrupt:
-        logger.info("Servidor detenido por el usuario")
+        logger.info("Server stopped by user")
     except Exception as e:
-        logger.error(f"Error al iniciar el servidor: {e}")
+        logger.error(f"Error starting server: {e}")
         raise
 
 if __name__ == "__main__":

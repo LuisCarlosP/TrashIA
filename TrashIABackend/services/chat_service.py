@@ -10,28 +10,28 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class MaterialContext:
-    """Contexto del material identificado"""
+    """Context of identified material"""
     material_type: str
     is_recyclable: bool
     material_info: str
     
 class ChatService:
-    """Servicio para manejar conversaciones con Gemini AI sobre reciclaje"""
+    """Service to handle conversations with Gemini AI about recycling"""
     
     def __init__(self):
-        """Inicializa el servicio de chat con Gemini"""
+        """Initialize chat service with Gemini"""
         if not GEMINI_API_KEY:
-            logger.warning("GEMINI_API_KEY no configurada")
-            raise ValueError("GEMINI_API_KEY debe estar configurada en las variables de entorno")
+            logger.warning("GEMINI_API_KEY not configured")
+            raise ValueError("GEMINI_API_KEY must be configured in environment variables")
         
         genai.configure(api_key=GEMINI_API_KEY)
         self.model = genai.GenerativeModel('gemini-2.0-flash')
         self.chat_sessions: Dict[str, Any] = {}
-        logger.info("ChatService inicializado correctamente")
+        logger.info("ChatService initialized successfully")
     
     def _translate_material(self, material_type: str, language: str) -> str:
         """
-        Traduce el nombre del material al idioma especificado
+        Translates the material name to the specified language
         """
         if language in MATERIAL_TRANSLATIONS:
             return MATERIAL_TRANSLATIONS[language].get(material_type, material_type)
@@ -39,8 +39,8 @@ class ChatService:
     
     def _is_on_topic(self, question: str) -> bool:
         """
-        Verifica si la pregunta está relacionada con reciclaje y sostenibilidad
-        usando palabras clave
+        Checks if the question is related to recycling and sustainability
+        using keywords
         """
         if len(question.split()) <= 3:
             return True
@@ -52,7 +52,7 @@ class ChatService:
     
     def _build_system_context(self, material_context: Optional[MaterialContext], language: str = "en") -> str:
         """
-        Construye el contexto del sistema con los prompts desde el JSON
+        Builds the system context with prompts from JSON
         """
         system_prompt = CHAT_PROMPTS['system_prompt'][language]
         moderation_prompt = CHAT_PROMPTS['moderation_prompt'][language]
@@ -80,15 +80,15 @@ class ChatService:
         language: str = "en"
     ) -> Dict[str, Any]:
         """
-        Crea una nueva sesión de chat para un usuario
+        Creates a new chat session for a user
         
         Args:
-            session_id: ID único de la sesión
-            material_context: Contexto del material identificado
-            language: Idioma (en/es)
+            session_id: Unique session ID
+            material_context: Context of identified material
+            language: Language (en/es)
         
         Returns:
-            Mensaje de bienvenida
+            Welcome message
         """
         try:
             if language not in ["en", "es"]:
@@ -114,7 +114,7 @@ class ChatService:
             else:
                 welcome = CHAT_PROMPTS['no_material_context'][language]
             
-            logger.info(f"Nueva sesión de chat creada: {session_id}")
+            logger.info(f"New chat session created: {session_id}")
             
             return {
                 "session_id": session_id,
@@ -123,8 +123,8 @@ class ChatService:
             }
             
         except Exception as e:
-            logger.error(f"Error al crear sesión de chat: {e}")
-            raise ValidationError(f"Error al iniciar chat: {str(e)}")
+            logger.error(f"Error creating chat session: {e}")
+            raise ValidationError(f"Error starting chat: {str(e)}")
     
     def send_message(
         self, 
@@ -132,18 +132,18 @@ class ChatService:
         message: str
     ) -> Dict[str, Any]:
         """
-        Envía un mensaje al chat y obtiene respuesta
+        Sends a message to the chat and gets a response
         
         Args:
-            session_id: ID de la sesión
-            message: Mensaje del usuario
+            session_id: Session ID
+            message: User message
         
         Returns:
-            Respuesta del asistente
+            Assistant response
         """
         try:
             if session_id not in self.chat_sessions:
-                raise ValidationError("Sesión de chat no encontrada. Por favor, crea una sesión primero.")
+                raise ValidationError("Chat session not found. Please create a session first.")
             
             session = self.chat_sessions[session_id]
             chat = session["chat"]
@@ -152,9 +152,9 @@ class ChatService:
             
             full_message = f"{system_context}\n\nUser question: {message}"
             
-            # Configuración para limitar la respuesta a aproximadamente 150 palabras
+            # Configuration to limit response to approximately 150 words
             generation_config = genai.GenerationConfig(
-                max_output_tokens=200  # Aproximadamente 150 palabras
+                max_output_tokens=200  # Approximately 150 words
             )
             
             response = chat.send_message(full_message, generation_config=generation_config)
@@ -169,7 +169,7 @@ class ChatService:
                 "content": response_text
             })
             
-            logger.info(f"Mensaje procesado para sesión: {session_id}")
+            logger.info(f"Message processed for session: {session_id}")
             
             return {
                 "response": response_text,
@@ -178,7 +178,7 @@ class ChatService:
             }
             
         except Exception as e:
-            logger.error(f"Error al procesar mensaje: {e}")
+            logger.error(f"Error processing message: {e}")
             language = self.chat_sessions.get(session_id, {}).get("language", "en")
             error_msg = CHAT_PROMPTS['error_message'][language]
             
@@ -190,32 +190,32 @@ class ChatService:
     
     def get_chat_history(self, session_id: str) -> List[Dict[str, str]]:
         """
-        Obtiene el historial de conversación
+        Gets the conversation history
         
         Args:
-            session_id: ID de la sesión
+            session_id: Session ID
         
         Returns:
-            Lista de mensajes
+            List of messages
         """
         if session_id not in self.chat_sessions:
-            raise ValidationError("Sesión de chat no encontrada")
+            raise ValidationError("Chat session not found")
         
         return self.chat_sessions[session_id]["history"]
     
     def delete_chat_session(self, session_id: str) -> bool:
         """
-        Elimina una sesión de chat
+        Deletes a chat session
         
         Args:
-            session_id: ID de la sesión
+            session_id: Session ID
         
         Returns:
-            True si se eliminó correctamente
+            True if deleted successfully
         """
         if session_id in self.chat_sessions:
             del self.chat_sessions[session_id]
-            logger.info(f"Sesión eliminada: {session_id}")
+            logger.info(f"Session deleted: {session_id}")
             return True
         return False
     
@@ -225,17 +225,17 @@ class ChatService:
         material_context: MaterialContext
     ) -> Dict[str, Any]:
         """
-        Actualiza el contexto del material en una sesión existente
+        Updates the material context in an existing session
         
         Args:
-            session_id: ID de la sesión
-            material_context: Nuevo contexto del material
+            session_id: Session ID
+            material_context: New material context
         
         Returns:
-            Confirmación de actualización
+            Update confirmation
         """
         if session_id not in self.chat_sessions:
-            raise ValidationError("Sesión de chat no encontrada")
+            raise ValidationError("Chat session not found")
         
         session = self.chat_sessions[session_id]
         language = session["language"]
@@ -245,7 +245,7 @@ class ChatService:
         
         session["chat"] = self.model.start_chat(history=[])
         
-        logger.info(f"Contexto de material actualizado para sesión: {session_id}")
+        logger.info(f"Material context updated for session: {session_id}")
         
         translated_material = self._translate_material(material_context.material_type, language)
         welcome = CHAT_PROMPTS['welcome_message'][language].format(

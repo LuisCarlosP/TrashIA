@@ -1,26 +1,44 @@
 {
   "cardboard": {
     "recyclable": true,
-    "info": "El cartón es reciclable y debe colocarse en el contenedor azul."
+    "info": {
+      "en": "Cardboard is recyclable and should be placed in the blue container.",
+      "es": "El cartón es reciclable y debe colocarse en el contenedor azul."
+    }
   },
   "glass": {
     "recyclable": true,
-    "info": "El vidrio es reciclable, pero debe estar limpio y sin tapas."
+    "info": {
+      "en": "Glass is recyclable, but it must be clean and without caps.",
+      "es": "El vidrio es reciclable, pero debe estar limpio y sin tapas."
+    }
   },
   "metal": {
     "recyclable": true,
-    "info": "Los metales son reciclables y se pueden depositar en puntos específicos."
+    "info": {
+      "en": "Metals are recyclable and can be deposited at specific points.",
+      "es": "Los metales son reciclables y se pueden depositar en puntos específicos."
+    }
   },
   "paper": {
     "recyclable": true,
-    "info": "El papel es reciclable siempre que no esté muy sucio."
+    "info": {
+      "en": "Paper is recyclable as long as it is not too dirty.",
+      "es": "El papel es reciclable siempre que no esté muy sucio."
+    }
   },
   "plastic": {
     "recyclable": true,
-    "info": "El plástico es reciclable, pero algunos tipos requieren separación."
+    "info": {
+      "en": "Plastic is recyclable, but some types require separation.",
+      "es": "El plástico es reciclable, pero algunos tipos requieren separación."
+    }
   },
   "trash": {
     "recyclable": false,
-    "info": "Este material no es reciclable y debe ir a la basura común."
+    "info": {
+      "en": "This material is not recyclable and should go to regular trash.",
+      "es": "Este material no es reciclable y debe ir a la basura común."
+    }
   }
 }

@@ -1,14 +1,14 @@
 """
-Excepciones personalizadas para el procesamiento de imágenes.
+Custom exceptions for image processing.
 """
 
 
 class ImageProcessingError(Exception):
     """
-    Excepción lanzada cuando hay problemas al procesar una imagen.
+    Exception raised when there are problems processing an image.
     """
     
-    def __init__(self, message: str = "Error al procesar la imagen", original_error: str = None):
+    def __init__(self, message: str = "Error processing image", original_error: str = None):
         if original_error:
             message += f": {original_error}"
         super().__init__(message)

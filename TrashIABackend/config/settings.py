@@ -23,7 +23,7 @@ IMAGE_HEIGHT = 224
 
 MODEL_PATH = os.getenv('MODEL_PATH', 'models/modelo_basura.h5')
 
-ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'http://localhost:8080,https://luiscarlosp.github.io').split(',')
+ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', 'http://localhost:5173,http://localhost:8080,https://luiscarlosp.github.io').split(',')
 
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
 
@@ -55,22 +55,39 @@ MATERIAL_TRANSLATIONS = {
     }
 }
 
-def load_recyclable_info() -> Dict[str, Tuple[bool, str]]:
-    """Carga información de reciclabilidad desde recyclable_info.json"""
+def load_recyclable_info() -> Dict[str, Dict]:
+    """Load recyclability information from recyclable_info.json"""
     json_path = Path(__file__).parent / 'recyclable_info.json'
     
     with open(json_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
     
-    return {key: (value['recyclable'], value['info']) for key, value in data.items()}
+    return data
+
+def get_recyclable_info(material: str, language: str = "en") -> Tuple[bool, str]:
+    """Get recyclability info for a material in the specified language"""
+    info = RECYCLABLE_INFO.get(material, {})
+    if not info:
+        return False, "No recyclability information available."
+    
+    recyclable = info.get('recyclable', False)
+    info_text = info.get('info', {})
+    
+    if isinstance(info_text, dict):
+        text = info_text.get(language, info_text.get('en', ''))
+    else:
+        # Backward compatibility
+        text = info_text
+    
+    return recyclable, text
 
 def load_chat_prompts() -> Dict:
-    """Carga los prompts del chat desde chat_prompts.json"""
+    """Load chat prompts from chat_prompts.json"""
     json_path = Path(__file__).parent / 'chat_prompts.json'
     
     with open(json_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
-RECYCLABLE_INFO: Dict[str, Tuple[bool, str]] = load_recyclable_info()
+RECYCLABLE_INFO: Dict[str, Dict] = load_recyclable_info()
 
 CHAT_PROMPTS: Dict = load_chat_prompts()

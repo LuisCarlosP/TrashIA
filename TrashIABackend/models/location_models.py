@@ -1,5 +1,5 @@
 """
-Modelos Pydantic para funcionalidades de ubicación y puntos de reciclaje.
+Pydantic models for location functionality and recycling points.
 """
 
 from typing import List, Optional
@@ -7,56 +7,56 @@ from pydantic import BaseModel, Field
 
 
 class Coordinates(BaseModel):
-    """Coordenadas geográficas."""
-    latitude: float = Field(..., ge=-90, le=90, description="Latitud")
-    longitude: float = Field(..., ge=-180, le=180, description="Longitud")
+    """Geographic coordinates."""
+    latitude: float = Field(..., ge=-90, le=90, description="Latitude")
+    longitude: float = Field(..., ge=-180, le=180, description="Longitude")
 
 
 class RecyclingPoint(BaseModel):
-    """Punto de reciclaje con información detallada."""
-    id: str = Field(..., description="Identificador único del punto")
-    name: str = Field(..., description="Nombre del punto de reciclaje")
+    """Recycling point with detailed information."""
+    id: str = Field(..., description="Unique point identifier")
+    name: str = Field(..., description="Recycling point name")
     latitude: float = Field(..., ge=-90, le=90)
     longitude: float = Field(..., ge=-180, le=180)
-    address: Optional[str] = Field(None, description="Dirección física")
+    address: Optional[str] = Field(None, description="Physical address")
     types: List[str] = Field(
         default_factory=list,
-        description="Tipos de materiales aceptados (plastic, glass, paper, metal, cardboard, electronics, batteries)"
+        description="Accepted material types (plastic, glass, paper, metal, cardboard, electronics, batteries)"
     )
-    opening_hours: Optional[str] = Field(None, description="Horario de atención")
-    phone: Optional[str] = Field(None, description="Teléfono de contacto")
-    website: Optional[str] = Field(None, description="Sitio web")
-    distance: Optional[float] = Field(None, description="Distancia en metros desde el usuario")
-    operator: Optional[str] = Field(None, description="Operador o empresa")
+    opening_hours: Optional[str] = Field(None, description="Opening hours")
+    phone: Optional[str] = Field(None, description="Contact phone")
+    website: Optional[str] = Field(None, description="Website")
+    distance: Optional[float] = Field(None, description="Distance in meters from user")
+    operator: Optional[str] = Field(None, description="Operator or company")
 
 
 class RecyclingPointsRequest(BaseModel):
-    """Solicitud para buscar puntos de reciclaje cercanos."""
-    latitude: float = Field(..., ge=-90, le=90, description="Latitud del usuario")
-    longitude: float = Field(..., ge=-180, le=180, description="Longitud del usuario")
+    """Request to search for nearby recycling points."""
+    latitude: float = Field(..., ge=-90, le=90, description="User latitude")
+    longitude: float = Field(..., ge=-180, le=180, description="User longitude")
     radius: int = Field(
         default=5000,
         ge=100,
         le=50000,
-        description="Radio de búsqueda en metros (100-50000)"
+        description="Search radius in meters (100-50000)"
     )
     types: Optional[List[str]] = Field(
         None,
-        description="Filtrar por tipos de materiales específicos"
+        description="Filter by specific material types"
     )
 
 
 class RecyclingPointsResponse(BaseModel):
-    """Respuesta con lista de puntos de reciclaje."""
+    """Response with list of recycling points."""
     success: bool = Field(True)
-    count: int = Field(..., description="Número de puntos encontrados")
-    radius: int = Field(..., description="Radio de búsqueda utilizado")
-    center: Coordinates = Field(..., description="Centro de búsqueda")
-    points: List[RecyclingPoint] = Field(..., description="Lista de puntos de reciclaje")
+    count: int = Field(..., description="Number of points found")
+    radius: int = Field(..., description="Search radius used")
+    center: Coordinates = Field(..., description="Search center")
+    points: List[RecyclingPoint] = Field(..., description="List of recycling points")
 
 
 class LocationErrorResponse(BaseModel):
-    """Respuesta de error para operaciones de ubicación."""
+    """Error response for location operations."""
     success: bool = Field(False)
-    error: str = Field(..., description="Mensaje de error")
-    code: int = Field(..., description="Código de error HTTP")
+    error: str = Field(..., description="Error message")
+    code: int = Field(..., description="HTTP error code")

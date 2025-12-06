@@ -1,5 +1,5 @@
 """
-Rutas para funcionalidades de ubicación y puntos de reciclaje.
+Routes for location functionality and recycling points.
 """
 
 import logging
@@ -28,49 +28,49 @@ limiter = Limiter(key_func=get_remote_address)
 
 
 def validate_coordinates(latitude: float, longitude: float) -> None:
-    """Valida que las coordenadas estén en rangos válidos."""
+    """Validates that coordinates are in valid ranges."""
     if not (-90 <= latitude <= 90):
-        raise InvalidCoordinatesError(f"Latitud {latitude} fuera de rango (-90 a 90)")
+        raise InvalidCoordinatesError(f"Latitude {latitude} out of range (-90 to 90)")
     if not (-180 <= longitude <= 180):
-        raise InvalidCoordinatesError(f"Longitud {longitude} fuera de rango (-180 a 180)")
+        raise InvalidCoordinatesError(f"Longitude {longitude} out of range (-180 to 180)")
 
 
 def validate_radius(radius: int) -> None:
-    """Valida que el radio esté en el rango permitido."""
+    """Validates that the radius is in the allowed range."""
     if not (100 <= radius <= 50000):
-        raise InvalidRadiusError(f"Radio {radius} fuera de rango (100 a 50000 metros)")
+        raise InvalidRadiusError(f"Radius {radius} out of range (100 to 50000 meters)")
 
 
 @router.get(
     "/recycling-points",
     response_model=RecyclingPointsResponse,
-    summary="Buscar puntos de reciclaje cercanos",
-    description="Busca puntos de reciclaje en un radio específico desde las coordenadas dadas"
+    summary="Search nearby recycling points",
+    description="Searches for recycling points within a specific radius from given coordinates"
 )
 @limiter.limit("30/minute")
 async def get_recycling_points(
     request: Request,
-    latitude: float = Query(..., ge=-90, le=90, description="Latitud del centro de búsqueda"),
-    longitude: float = Query(..., ge=-180, le=180, description="Longitud del centro de búsqueda"),
-    radius: int = Query(2000, ge=100, le=50000, description="Radio de búsqueda en metros"),
+    latitude: float = Query(..., ge=-90, le=90, description="Latitude of search center"),
+    longitude: float = Query(..., ge=-180, le=180, description="Longitude of search center"),
+    radius: int = Query(2000, ge=100, le=50000, description="Search radius in meters"),
     types: Optional[str] = Query(
         None,
-        description="Tipos de materiales separados por coma (plastic,glass,paper,metal,cardboard,electronics,batteries)"
+        description="Material types separated by comma (plastic,glass,paper,metal,cardboard,electronics,batteries)"
     )
 ):
     """
-    Busca puntos de reciclaje cercanos a una ubicación.
+    Search for nearby recycling points to a location.
     
-    - **latitude**: Latitud del centro de búsqueda (-90 a 90)
-    - **longitude**: Longitud del centro de búsqueda (-180 a 180)
-    - **radius**: Radio de búsqueda en metros (100 a 50000)
-    - **types**: Filtrar por tipos de materiales (opcional)
+    - **latitude**: Latitude of search center (-90 to 90)
+    - **longitude**: Longitude of search center (-180 to 180)
+    - **radius**: Search radius in meters (100 to 50000)
+    - **types**: Filter by material types (optional)
     """
     try:
         validate_coordinates(latitude, longitude)
         validate_radius(radius)
         
-        # Parsear tipos si se proporcionan
+        # Parse types if provided
         types_filter = None
         if types:
             types_filter = [t.strip().lower() for t in types.split(',')]
@@ -83,7 +83,7 @@ async def get_recycling_points(
             types_filter=types_filter
         )
         
-        logger.info(f"Encontrados {len(points)} puntos de reciclaje para lat={latitude}, lon={longitude}")
+        logger.info(f"Found {len(points)} recycling points for lat={latitude}, lon={longitude}")
         
         return RecyclingPointsResponse(
             success=True,
@@ -94,27 +94,27 @@ async def get_recycling_points(
         )
         
     except InvalidCoordinatesError as e:
-        logger.warning(f"Coordenadas inválidas: {e}")
+        logger.warning(f"Invalid coordinates: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except InvalidRadiusError as e:
-        logger.warning(f"Radio inválido: {e}")
+        logger.warning(f"Invalid radius: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except LocationError as e:
-        logger.error(f"Error de ubicación: {e}")
+        logger.error(f"Location error: {e}")
         raise HTTPException(status_code=e.code, detail=e.message)
     except Exception as e:
-        logger.error(f"Error inesperado buscando puntos de reciclaje: {e}")
+        logger.error(f"Unexpected error searching recycling points: {e}")
         raise HTTPException(
             status_code=500,
-            detail="Error interno al buscar puntos de reciclaje"
+            detail="Internal error searching recycling points"
         )
 
 
 @router.post(
     "/recycling-points/search",
     response_model=RecyclingPointsResponse,
-    summary="Buscar puntos de reciclaje (POST)",
-    description="Alternativa POST para buscar puntos de reciclaje"
+    summary="Search recycling points (POST)",
+    description="POST alternative to search recycling points"
 )
 @limiter.limit("30/minute")
 async def search_recycling_points(
@@ -122,8 +122,8 @@ async def search_recycling_points(
     search_request: RecyclingPointsRequest
 ):
     """
-    Busca puntos de reciclaje usando un body JSON.
-    Útil para aplicaciones que prefieren enviar datos por POST.
+    Search recycling points using a JSON body.
+    Useful for applications that prefer sending data via POST.
     """
     try:
         validate_coordinates(search_request.latitude, search_request.longitude)
@@ -155,22 +155,22 @@ async def search_recycling_points(
     except LocationError as e:
         raise HTTPException(status_code=e.code, detail=e.message)
     except Exception as e:
-        logger.error(f"Error en búsqueda POST: {e}")
+        logger.error(f"Error in POST search: {e}")
         raise HTTPException(
             status_code=500,
-            detail="Error interno al buscar puntos de reciclaje"
+            detail="Internal error searching recycling points"
         )
 
 
 @router.get(
     "/health",
-    summary="Estado del servicio de ubicación",
-    description="Verifica que el servicio de ubicación esté funcionando"
+    summary="Location service status",
+    description="Verifies that the location service is working"
 )
 async def location_health():
-    """Endpoint de salud para el servicio de ubicación."""
+    """Health endpoint for the location service."""
     return {
         "status": "healthy",
         "service": "location",
-        "message": "Servicio de ubicación funcionando correctamente"
+        "message": "Location service working correctly"
     }

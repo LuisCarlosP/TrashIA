@@ -17,19 +17,20 @@ from core.security import get_api_key
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Configurar rate limiting con Redis
+# Configure rate limiting with Redis
 limiter = Limiter(key_func=get_remote_address, storage_uri=REDIS_URL)
 
 app = FastAPI(
-    title="Clasificador de Basura IA",
-    description="API para clasificar tipos de basura y determinar reciclabilidad",
+    title="TrashIA - AI Waste Classifier",
+    description="API for classifying waste types and determining recyclability",
     version="1.0.0"
 )
 
-# Agregar rate limiter al state
+# Add rate limiter to state
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# CORS middleware must be added before routers to handle OPTIONS requests
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -37,6 +38,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Middleware to skip API key validation for OPTIONS requests
+@app.middleware("http")
+async def skip_auth_for_options(request: Request, call_next):
+    if request.method == "OPTIONS":
+        # Skip API key validation for OPTIONS (handled by CORS middleware)
+        response = await call_next(request)
+        return response
+    return await call_next(request)
 
 if ENVIRONMENT == "production":
     app.add_middleware(HTTPSRedirectMiddleware)
@@ -46,6 +56,8 @@ if ENVIRONMENT == "production":
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
         return response
 
+# Include routers with API key dependency
+# Note: OPTIONS requests are handled by CORS middleware and don't require authentication
 app.include_router(prediction_router, dependencies=[Depends(get_api_key)])
 app.include_router(chat_router, dependencies=[Depends(get_api_key)])
 app.include_router(location_router, dependencies=[Depends(get_api_key)])
@@ -54,7 +66,7 @@ app.include_router(barcode_router, dependencies=[Depends(get_api_key)])
 @app.get("/")
 async def root():
     return {
-        "message": "Bienvenido a TrashIA - Clasificador de Basura",
+        "message": "Welcome to TrashIA - AI Waste Classifier",
         "version": "1.0.0",
         "endpoints": {
             "health": "/health",
@@ -68,13 +80,13 @@ async def root():
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "message": "API funcionando correctamente"}
+    return {"status": "healthy", "message": "API is working correctly"}
 
 try:
     get_prediction_service()
-    logger.info("Servicios inicializados correctamente")
+    logger.info("Services initialized successfully")
 except Exception as e:
-    logger.error(f"Error al inicializar servicios: {e}")
+    logger.error(f"Error initializing services: {e}")
     raise
 
 if __name__ == "__main__":

@@ -66,7 +66,7 @@ def test_delete_session(client, mock_chat_service):
     )
     
     assert response.status_code == 200
-    assert response.json()["message"] == "Sesión eliminada correctamente"
+    assert response.json()["message"] == "Session deleted successfully"
 
 def test_delete_session_not_found(client, mock_chat_service):
     mock_chat_service.delete_chat_session.return_value = False

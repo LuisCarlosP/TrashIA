@@ -89,7 +89,7 @@ def analyze_packaging(text_to_analyze: str) -> list:
     return results
 
 async def fetch_from_upcitemdb(barcode: str) -> Optional[Dict[str, Any]]:
-    """Consulta la API de prueba de UPCitemdb."""
+    """Queries the trial API of UPCitemdb."""
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             @upc_breaker
@@ -116,7 +116,7 @@ async def fetch_from_upcitemdb(barcode: str) -> Optional[Dict[str, Any]]:
     except pybreaker.CircuitBreakerError:
         logger.warning(f"Circuit breaker open for UPCitemdb {barcode}")
     except Exception as e:
-        logger.warning(f"UPCitemdb falló para {barcode}: {e}")
+        logger.warning(f"UPCitemdb failed for {barcode}: {e}")
 
     return None
 
@@ -151,7 +151,7 @@ async def fetch_product_by_barcode(barcode: str) -> Optional[Dict[str, Any]]:
         logger.error(f"Error OpenFoodFacts {barcode}: {e}")
 
     if not product_data:
-        logger.info(f"Producto {barcode} no encontrado en OFF, intentando UPCitemdb...")
+        logger.info(f"Product {barcode} not found in OFF, trying UPCitemdb...")
         product_data = await fetch_from_upcitemdb(barcode)
 
     if product_data:
@@ -171,5 +171,5 @@ async def fetch_product_by_barcode(barcode: str) -> Optional[Dict[str, Any]]:
         product_data["recycling_info"] = recycling_info
         return product_data
 
-    logger.info(f"Producto no encontrado en ninguna base de datos: {barcode}")
+    logger.info(f"Product not found in any database: {barcode}")
     return None

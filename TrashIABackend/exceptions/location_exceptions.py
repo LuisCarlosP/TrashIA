@@ -1,10 +1,10 @@
 """
-Excepciones personalizadas para operaciones de ubicación.
+Custom exceptions for location operations.
 """
 
 
 class LocationError(Exception):
-    """Error base para operaciones de ubicación."""
+    """Base error for location operations."""
     
     def __init__(self, message: str, code: int = 500):
         self.message = message
@@ -13,35 +13,35 @@ class LocationError(Exception):
 
 
 class OverpassAPIError(LocationError):
-    """Error al consultar Overpass API."""
+    """Error querying Overpass API."""
     
-    def __init__(self, message: str = "Error al consultar el servicio de mapas"):
+    def __init__(self, message: str = "Error querying map service"):
         super().__init__(message, 503)
 
 
 class OverpassTimeoutError(LocationError):
-    """Timeout al consultar Overpass API."""
+    """Timeout querying Overpass API."""
     
-    def __init__(self, message: str = "La búsqueda tardó demasiado. Intente con un radio menor."):
+    def __init__(self, message: str = "Search took too long. Try with a smaller radius."):
         super().__init__(message, 504)
 
 
 class InvalidCoordinatesError(LocationError):
-    """Coordenadas inválidas proporcionadas."""
+    """Invalid coordinates provided."""
     
-    def __init__(self, message: str = "Las coordenadas proporcionadas no son válidas"):
+    def __init__(self, message: str = "Provided coordinates are not valid"):
         super().__init__(message, 400)
 
 
 class InvalidRadiusError(LocationError):
-    """Radio de búsqueda inválido."""
+    """Invalid search radius."""
     
-    def __init__(self, message: str = "El radio debe estar entre 100 y 50000 metros"):
+    def __init__(self, message: str = "Radius must be between 100 and 50000 meters"):
         super().__init__(message, 400)
 
 
 class NoResultsError(LocationError):
-    """No se encontraron resultados."""
+    """No results found."""
     
-    def __init__(self, message: str = "No se encontraron puntos de reciclaje en el área"):
+    def __init__(self, message: str = "No recycling points found in the area"):
         super().__init__(message, 404)

@@ -1,17 +1,17 @@
 """
-Excepciones personalizadas para operaciones del modelo de IA.
+Custom exceptions for AI model operations.
 """
 
 
 class ModelLoadError(Exception):
     """
-    Excepción lanzada cuando hay problemas al cargar el modelo.
+    Exception raised when there are problems loading the model.
     """
     
     def __init__(self, model_path: str, original_error: str = None):
         self.model_path = model_path
         self.original_error = original_error
-        message = f"Error al cargar el modelo desde {model_path}"
+        message = f"Error loading model from {model_path}"
         if original_error:
             message += f": {original_error}"
         super().__init__(message)
@@ -19,10 +19,10 @@ class ModelLoadError(Exception):
 
 class PredictionError(Exception):
     """
-    Excepción lanzada cuando hay problemas durante la predicción.
+    Exception raised when there are problems during prediction.
     """
     
-    def __init__(self, message: str = "Error durante la predicción", original_error: str = None):
+    def __init__(self, message: str = "Error during prediction", original_error: str = None):
         if original_error:
             message += f": {original_error}"
         super().__init__(message)

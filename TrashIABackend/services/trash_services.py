@@ -6,7 +6,7 @@ from typing import Tuple, Dict, Any
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 import logging
 
-from config.settings import IMAGE_WIDTH, IMAGE_HEIGHT, CLASS_NAMES, RECYCLABLE_INFO, MODEL_PATH
+from config.settings import IMAGE_WIDTH, IMAGE_HEIGHT, CLASS_NAMES, get_recyclable_info, MODEL_PATH
 from exceptions import ModelLoadError, PredictionError, ImageProcessingError
 
 logger = logging.getLogger(__name__)
@@ -20,9 +20,9 @@ class ModelService:
     def _load_model(self) -> None:
         try:
             self.model = tf.keras.models.load_model(MODEL_PATH)
-            logger.info(f"Modelo cargado exitosamente desde {MODEL_PATH}")
+            logger.info(f"Model loaded successfully from {MODEL_PATH}")
         except Exception as e:
-            logger.error(f"Error al cargar el modelo: {e}")
+            logger.error(f"Error loading model: {e}")
             raise ModelLoadError(MODEL_PATH, str(e))
     
     def predict(self, img_array: np.ndarray) -> Tuple[str, float]:
@@ -32,12 +32,12 @@ class ModelService:
             class_name = CLASS_NAMES[index]
             confidence = float(tf.nn.softmax(predictions[0])[index].numpy())
             
-            logger.info(f"Predicción realizada: {class_name} con confianza {confidence:.2f}")
+            logger.info(f"Prediction made: {class_name} with confidence {confidence:.2f}")
             return class_name, confidence
             
         except Exception as e:
-            logger.error(f"Error en la predicción: {e}")
-            raise PredictionError("Error al realizar la predicción", str(e))
+            logger.error(f"Error in prediction: {e}")
+            raise PredictionError("Error performing prediction", str(e))
 
 class ImageProcessor:
     
@@ -50,38 +50,35 @@ class ImageProcessor:
             img_array = tf.expand_dims(img_array, 0)
             img_array = preprocess_input(img_array)
             
-            logger.info("Imagen procesada exitosamente")
+            logger.info("Image processed successfully")
             return img_array
             
         except Exception as e:
-            logger.error(f"Error al procesar la imagen: {e}")
-            raise ImageProcessingError("Error al procesar la imagen", str(e))
+            logger.error(f"Error processing image: {e}")
+            raise ImageProcessingError("Error processing image", str(e))
 
 class ResponseFormatter:
     
     @staticmethod
-    def format_prediction_response(class_name: str, confidence: float) -> Dict[str, Any]:
+    def format_prediction_response(class_name: str, confidence: float, language: str = "en") -> Dict[str, Any]:
         try:
-            is_recyclable, message = RECYCLABLE_INFO.get(
-                class_name, 
-                (False, "No hay información sobre reciclabilidad.")
-            )
+            is_recyclable, message = get_recyclable_info(class_name, language)
             
             return {
-                "clase": class_name,
-                "confianza": confidence,
-                "es_reciclable": is_recyclable,
-                "mensaje": message
+                "class": class_name,
+                "confidence": confidence,
+                "is_recyclable": is_recyclable,
+                "message": message
             }
             
         except Exception as e:
-            logger.error(f"Error al formatear respuesta: {e}")
-            raise RuntimeError(f"Error al formatear la respuesta: {e}")
+            logger.error(f"Error formatting response: {e}")
+            raise RuntimeError(f"Error formatting response: {e}")
     
     @staticmethod
     def format_error_response(error_message: str, status_code: int = 500) -> Dict[str, Any]:
         return {
             "error": True,
-            "mensaje": error_message,
-            "codigo": status_code
+            "message": error_message,
+            "code": status_code
         }

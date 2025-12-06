@@ -1,5 +1,5 @@
 """
-Módulo de excepciones personalizadas para el proyecto TrashIA.
+Custom exceptions module for TrashIA project.
 """
 
 from .model_exceptions import ModelLoadError, PredictionError
