@@ -9,11 +9,14 @@ REST API built with FastAPI and TensorFlow to classify types of trash, determine
 - Image classification into 6 categories: cardboard, glass, metal, paper, plastic, and general trash
 - Automatic recyclability determination
 - Interactive AI chat (Google Gemini) for recycling queries
+- Barcode scanning for product information and recyclability
+- Recycling point location search using OpenStreetMap
 - Rate limiting for API protection
 - Multi-language support (English/Spanish)
 - File validation by MIME type
 - Automatic documentation with Swagger/OpenAPI
-- **Security**: API Key authentication, Redis-based rate limiting, and Circuit Breakers
+- Security: API Key authentication, Redis-based rate limiting, and Circuit Breakers
+- Comprehensive test suite
 
 
 ## Requirements
@@ -74,6 +77,22 @@ python run.py
 
 The API will be available at: `http://localhost:8000`
 
+## Running Tests
+
+To run the test suite:
+
+```bash
+cd TrashIABackend
+pytest tests/ -v
+```
+
+To run specific test files:
+
+```bash
+pytest tests/routes/test_prediction.py -v
+pytest tests/services/test_chat_service.py -v
+```
+
 ## Endpoints
 
 ### General
@@ -94,10 +113,10 @@ The API will be available at: `http://localhost:8000`
 **Successful response:**
 ```json
 {
-  "material_type": "plastic",
-  "is_recyclable": true,
-  "confidence": 0.95,
-  "material_info": "Information about the material"
+  "clase": "plastic",
+  "confianza": 0.95,
+  "es_reciclable": true,
+  "mensaje": "Information about the material"
 }
 ```
 
@@ -120,6 +139,35 @@ The API will be available at: `http://localhost:8000`
 - `session_id`: Chat session ID
 - `message`: User message
 
+### Barcode
+| Method | Endpoint | Description | Rate Limit |
+|--------|----------|-------------|------------|
+| GET | `/barcode/{barcode}` | Get product information by barcode | 30/minute |
+| GET | `/barcode/health` | Barcode service health check | - |
+
+**Parameters for `/barcode/{barcode}`:**
+- `barcode`: Product barcode (minimum 8 digits)
+
+**Successful response:**
+```json
+{
+  "found": true,
+  "barcode": "12345678",
+  "name": "Product Name",
+  "brand": "Brand Name",
+  "source": "openfoodfacts",
+  "recycling_info": [
+    {
+      "material": "Plastic",
+      "recyclable": true,
+      "bin": "Yellow Bin",
+      "bin_type": "yellow",
+      "tip": "Clean/Rinse the container"
+    }
+  ]
+}
+```
+
 ### Location
 | Method | Endpoint | Description | Rate Limit |
 |--------|----------|-------------|------------|
@@ -130,7 +178,7 @@ The API will be available at: `http://localhost:8000`
 **Parameters for `/location/recycling-points`:**
 - `latitude`: Latitude (-90 to 90)
 - `longitude`: Longitude (-180 to 180)
-- `radius`: Search radius in meters (100 to 50000, default: 5000)
+- `radius`: Search radius in meters (100 to 50000, default: 2000)
 - `types`: (optional) Filter by recycling point types
 
 ### Security
@@ -156,29 +204,44 @@ TrashIABackend/
 ├── app.py                 # Main FastAPI application
 ├── run.py                 # Startup script
 ├── requirements.txt       # Python dependencies
+├── Dockerfile             # Docker configuration
 ├── config/
 │   ├── settings.py        # Configuration and environment variables
 │   ├── chat_prompts.json  # AI chat prompts
 │   └── recyclable_info.json # Material information
 ├── core/
-│   └── dependencies.py    # Dependency injection
+│   ├── dependencies.py    # Dependency injection
+│   └── security.py        # Security and authentication
 ├── exceptions/
 │   ├── image_exceptions.py
+│   ├── location_exceptions.py
 │   ├── model_exceptions.py
 │   └── validation_exceptions.py
 ├── models/
+│   ├── location_models.py  # Location data models
 │   ├── modelo_basura.h5   # Alternative TensorFlow model
 │   └── TrashIAv2.h5       # Main model
 ├── routes/
 │   ├── prediction.py      # Prediction routes
 │   ├── chat.py            # Chat routes
-│   └── location.py        # Location/recycling points routes
+│   ├── location.py        # Location/recycling points routes
+│   └── barcode.py         # Barcode scanning routes
 ├── services/
 │   ├── trash_services.py  # Classification logic
 │   ├── chat_service.py    # Gemini chat logic
-│   └── location_service.py # OpenStreetMap integration
-└── scripts/
-    └── test_model.py      # Test scripts
+│   ├── location_service.py # OpenStreetMap integration
+│   └── barcode_service.py # Barcode product lookup
+└── tests/
+    ├── conftest.py         # Test configuration
+    ├── routes/             # Route tests
+    │   ├── test_prediction.py
+    │   ├── test_chat.py
+    │   ├── test_location.py
+    │   └── test_barcode.py
+    └── services/           # Service tests
+        ├── test_trash_services.py
+        ├── test_chat_service.py
+        └── test_barcode_service.py
 ```
 
 ## Technologies
@@ -194,11 +257,24 @@ TrashIABackend/
 | Google Generative AI | 0.8.3 | Gemini chat |
 | SlowAPI | 0.1.9 | Rate limiting |
 | python-magic | 0.4.27 | MIME validation |
-| httpx | 0.28.1 | HTTP client (OpenStreetMap) |
+| httpx | 0.28.1 | HTTP client (OpenStreetMap, OpenFoodFacts) |
 | python-dotenv | 1.1.1 | Environment variables |
 | Redis | 5.0.1 | Rate limiting storage |
 | pybreaker | 1.0.1 | Circuit breakers |
+| pytest | - | Testing framework |
 
+## Testing
+
+The project includes a comprehensive test suite covering:
+- Route endpoints (prediction, chat, location, barcode)
+- Service layer logic
+- Error handling and validation
+- Mock-based testing for external dependencies
+
+Run tests with:
+```bash
+pytest tests/ -v
+```
 
 ## License
 

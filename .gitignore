@@ -10,6 +10,12 @@ env/
 # Archivos de configuración local
 .env
 
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+
 # VS Code
 .vscode/
 
