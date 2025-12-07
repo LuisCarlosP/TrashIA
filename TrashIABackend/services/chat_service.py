@@ -39,39 +39,57 @@ class ChatService:
             return MATERIAL_TRANSLATIONS[language].get(material_type, material_type)
         return material_type
     
-    def _is_on_topic(self, question: str) -> bool:
-        """
-        Checks if the question is related to recycling and sustainability
-        using keywords
-        """
-        if len(question.split()) <= 3:
-            return True
-            
-        question_lower = question.lower()
-        keywords = CHAT_PROMPTS['topic_keywords']['on_topic']
-        
-        return any(keyword.lower() in question_lower for keyword in keywords)
-    
     def _build_system_context(self, material_context: Optional[MaterialContext], language: str = "en") -> str:
         """
-        Builds the system context with prompts from JSON
+        Builds the system context with prompts from new JSON structure
         """
-        system_prompt = CHAT_PROMPTS['system_prompt'][language]
-        moderation_prompt = CHAT_PROMPTS['moderation_prompt'][language]
+        lang_key = language if language in ["en", "es"] else "en"
         
-        context = f"{system_prompt}\n\n{moderation_prompt}\n\n"
+        # Build identity section
+        identity = CHAT_PROMPTS['identity']
+        identity_desc = identity[f'description_{lang_key}']
         
+        # Build name rule
+        name_rule = CHAT_PROMPTS['name_rule'][lang_key]
+        
+        # Build topic detection
+        topic_detection = CHAT_PROMPTS['topic_detection'][lang_key]
+        
+        # Build off-topic rule
+        off_topic_rule = CHAT_PROMPTS['off_topic_rule'][lang_key]
+        
+        # Build behavior rules
+        behavior_rules = CHAT_PROMPTS['behavior_rules'][lang_key]
+        behavior_rules_text = "\n".join([f"- {rule}" for rule in behavior_rules])
+        
+        # Build response logic
+        response_logic = CHAT_PROMPTS['response_logic'][lang_key]
+        
+        # Build material context section
+        material_context_prompt = ""
         if material_context:
-            material_prompt = CHAT_PROMPTS['material_context_prompt'][language]
-            recyclable_text = "Yes" if material_context.is_recyclable else "No"
-            if language == "es":
-                recyclable_text = "Sí" if material_context.is_recyclable else "No"
-            
-            context += material_prompt.format(
-                material_type=material_context.material_type,
-                is_recyclable=recyclable_text,
-                material_info=material_context.material_info
+            material_template = CHAT_PROMPTS['material_context'][lang_key]
+            material_context_prompt = material_template.format(
+                material_type=material_context.material_type
             )
+        
+        # Combine all sections into the system prompt
+        context = f"""{identity_desc}
+
+{name_rule}
+
+{topic_detection}
+
+{off_topic_rule}
+
+Behavior Rules:
+{behavior_rules_text}
+
+{response_logic}
+"""
+        
+        if material_context_prompt:
+            context += f"\n{material_context_prompt}"
         
         return context
     
@@ -110,11 +128,11 @@ class ChatService:
             
             if material_context:
                 translated_material = self._translate_material(material_context.material_type, language)
-                welcome = CHAT_PROMPTS['welcome_message'][language].format(
+                welcome = CHAT_PROMPTS['messages']['welcome_message'][language].format(
                     material_type=translated_material
                 )
             else:
-                welcome = CHAT_PROMPTS['no_material_context'][language]
+                welcome = CHAT_PROMPTS['messages']['no_material'][language]
             
             logger.info(f"New chat session created: {session_id}")
             
@@ -182,7 +200,7 @@ class ChatService:
         except Exception as e:
             logger.error(f"Error processing message: {e}")
             language = self.chat_sessions.get(session_id, {}).get("language", "en")
-            error_msg = CHAT_PROMPTS['error_message'][language]
+            error_msg = CHAT_PROMPTS['messages']['error'][language]
             
             return {
                 "response": error_msg,
@@ -250,7 +268,7 @@ class ChatService:
         logger.info(f"Material context updated for session: {session_id}")
         
         translated_material = self._translate_material(material_context.material_type, language)
-        welcome = CHAT_PROMPTS['welcome_message'][language].format(
+        welcome = CHAT_PROMPTS['messages']['welcome_message'][language].format(
             material_type=translated_material
         )
         
