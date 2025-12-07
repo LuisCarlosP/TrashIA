@@ -28,16 +28,16 @@ def test_format_prediction_response():
     formatter = ResponseFormatter()
     response = formatter.format_prediction_response("plastic", 0.95)
     
-    assert response["clase"] == "plastic"
-    assert response["confianza"] == 0.95
-    assert response["es_reciclable"] is True
+    assert response["class"] == "plastic"
+    assert response["confidence"] == 0.95
+    assert response["is_recyclable"] is True
 
 def test_format_prediction_response_unknown():
     formatter = ResponseFormatter()
     response = formatter.format_prediction_response("unknown_class", 0.5)
     
-    assert response["clase"] == "unknown_class"
-    assert response["es_reciclable"] is False
+    assert response["class"] == "unknown_class"
+    assert response["is_recyclable"] is False
 
 def test_model_service_predict():
     with patch("tensorflow.keras.models.load_model") as mock_load:

@@ -1,12 +1,4 @@
-"""
-Custom exceptions for data validation.
-"""
-
-
 class ValidationError(Exception):
-    """
-    Exception raised when there are data validation problems.
-    """
     
     def __init__(self, field: str = None, message: str = "Validation error"):
         if field:

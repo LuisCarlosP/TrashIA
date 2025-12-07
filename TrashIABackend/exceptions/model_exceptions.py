@@ -1,12 +1,4 @@
-"""
-Custom exceptions for AI model operations.
-"""
-
-
 class ModelLoadError(Exception):
-    """
-    Exception raised when there are problems loading the model.
-    """
     
     def __init__(self, model_path: str, original_error: str = None):
         self.model_path = model_path
@@ -18,9 +10,6 @@ class ModelLoadError(Exception):
 
 
 class PredictionError(Exception):
-    """
-    Exception raised when there are problems during prediction.
-    """
     
     def __init__(self, message: str = "Error during prediction", original_error: str = None):
         if original_error:

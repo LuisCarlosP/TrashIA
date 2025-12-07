@@ -64,11 +64,9 @@ MODEL_PATH=models/TrashIAv2.h5
 ALLOWED_ORIGINS=http://localhost:8080,https://luiscarlosp.github.io
 GEMINI_API_KEY=use_your_gemini_api_key
 GEMINI_MODEL=your_gemini_model
-# Security
 API_KEY=your_secret_api_key
 REDIS_URL=redis://localhost:6379/0
 ENVIRONMENT=development
-
 ```
 
 ### 6. Run the application
@@ -91,7 +89,7 @@ To run specific test files:
 
 ```bash
 pytest tests/routes/test_prediction.py -v
-pytest tests/services/test_chat_service.py -v
+pytest tests/integration/test_file_validation.py -v
 ```
 
 ## Endpoints
@@ -100,8 +98,16 @@ pytest tests/services/test_chat_service.py -v
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/` | API information and available endpoints |
-| GET | `/health` | Check API status |
 | GET | `/docs` | Interactive Swagger UI documentation |
+
+### Health
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Check API status |
+| GET | `/health/dependencies` | Check all external dependencies |
+| GET | `/health/gemini` | Check Gemini API status |
+| GET | `/health/osm` | Check OpenStreetMap status |
+| GET | `/health/openfoodfacts` | Check OpenFoodFacts status |
 
 ### Prediction
 | Method | Endpoint | Description | Rate Limit |
@@ -110,14 +116,15 @@ pytest tests/services/test_chat_service.py -v
 
 **Parameters for `/predict`:**
 - `file`: Image (JPEG, PNG) - Maximum 5MB
+- `language`: Response language (`en`/`es`, default: `en`)
 
 **Successful response:**
 ```json
 {
-  "clase": "plastic",
-  "confianza": 0.95,
-  "es_reciclable": true,
-  "mensaje": "Information about the material"
+  "class": "plastic",
+  "confidence": 0.95,
+  "is_recyclable": true,
+  "message": "Information about the material"
 }
 ```
 
@@ -212,21 +219,23 @@ TrashIABackend/
 │   └── recyclable_info.json # Material information
 ├── core/
 │   ├── dependencies.py    # Dependency injection
-│   └── security.py        # Security and authentication
+│   ├── security.py        # Security and authentication
+│   └── error_handler.py   # Structured error responses
 ├── exceptions/
+│   ├── base_exception.py  # Base exception class
 │   ├── image_exceptions.py
 │   ├── location_exceptions.py
 │   ├── model_exceptions.py
 │   └── validation_exceptions.py
 ├── models/
 │   ├── location_models.py  # Location data models
-│   ├── modelo_basura.h5   # Alternative TensorFlow model
 │   └── TrashIAv2.h5       # Main model
 ├── routes/
 │   ├── prediction.py      # Prediction routes
 │   ├── chat.py            # Chat routes
 │   ├── location.py        # Location/recycling points routes
-│   └── barcode.py         # Barcode scanning routes
+│   ├── barcode.py         # Barcode scanning routes
+│   └── health.py          # Health check routes
 ├── services/
 │   ├── trash_services.py  # Classification logic
 │   ├── chat_service.py    # Gemini chat logic
@@ -234,11 +243,17 @@ TrashIABackend/
 │   └── barcode_service.py # Barcode product lookup
 └── tests/
     ├── conftest.py         # Test configuration
+    ├── factories/          # Test data factories
+    ├── integration/        # Integration tests
+    │   ├── test_file_validation.py
+    │   ├── test_rate_limiting.py
+    │   └── test_external_apis.py
     ├── routes/             # Route tests
     │   ├── test_prediction.py
     │   ├── test_chat.py
     │   ├── test_location.py
-    │   └── test_barcode.py
+    │   ├── test_barcode.py
+    │   └── test_health.py
     └── services/           # Service tests
         ├── test_trash_services.py
         ├── test_chat_service.py
@@ -258,26 +273,12 @@ TrashIABackend/
 | Google Generative AI | 0.8.3 | Gemini chat |
 | SlowAPI | 0.1.9 | Rate limiting |
 | python-magic | 0.4.27 | MIME validation |
-| httpx | 0.28.1 | HTTP client (OpenStreetMap, OpenFoodFacts) |
+| httpx | 0.28.1 | HTTP client |
 | python-dotenv | 1.1.1 | Environment variables |
 | Redis | 5.0.1 | Rate limiting storage |
 | pybreaker | 1.0.1 | Circuit breakers |
-| pytest | - | Testing framework |
-
-## Testing
-
-The project includes a comprehensive test suite covering:
-- Route endpoints (prediction, chat, location, barcode)
-- Service layer logic
-- Error handling and validation
-- Mock-based testing for external dependencies
-
-Run tests with:
-```bash
-pytest tests/ -v
-```
+| pytest | 9.0.1 | Testing framework |
 
 ## License
 
 This project is open source.
-

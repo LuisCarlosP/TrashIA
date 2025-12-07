@@ -1,0 +1,140 @@
+import logging
+import time
+from datetime import datetime, timezone
+from typing import Dict, Any
+import httpx
+from fastapi import APIRouter
+
+from config.settings import GEMINI_API_KEY
+
+logger = logging.getLogger(__name__)
+router = APIRouter(prefix="/health")
+
+
+async def check_service_health(
+    name: str,
+    url: str,
+    timeout: float = 5.0,
+    expected_status: int = 200
+) -> Dict[str, Any]:
+    start_time = time.time()
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.get(url)
+            latency_ms = int((time.time() - start_time) * 1000)
+            
+            if response.status_code == expected_status:
+                status = "healthy"
+            else:
+                status = "degraded"
+            
+            return {
+                "service": name,
+                "status": status,
+                "latency_ms": latency_ms,
+                "last_check": datetime.now(timezone.utc).isoformat()
+            }
+    except httpx.TimeoutException:
+        return {
+            "service": name,
+            "status": "unhealthy",
+            "error": "timeout",
+            "last_check": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        return {
+            "service": name,
+            "status": "unhealthy",
+            "error": str(e),
+            "last_check": datetime.now(timezone.utc).isoformat()
+        }
+
+
+@router.get("")
+async def health_check():
+    return {
+        "status": "healthy",
+        "service": "trashia-api",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@router.get("/dependencies")
+async def check_all_dependencies():
+    results = {}
+    
+    gemini_result = await check_gemini_health()
+    results["gemini"] = gemini_result
+    
+    osm_result = await check_osm_health()
+    results["openstreetmap"] = osm_result
+    
+    off_result = await check_openfoodfacts_health()
+    results["openfoodfacts"] = off_result
+    
+    all_healthy = all(r["status"] == "healthy" for r in results.values())
+    any_unhealthy = any(r["status"] == "unhealthy" for r in results.values())
+    
+    if all_healthy:
+        overall_status = "healthy"
+    elif any_unhealthy:
+        overall_status = "unhealthy"
+    else:
+        overall_status = "degraded"
+    
+    return {
+        "status": overall_status,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "dependencies": results
+    }
+
+
+@router.get("/gemini")
+async def check_gemini_health():
+    if not GEMINI_API_KEY:
+        return {
+            "service": "gemini",
+            "status": "unhealthy",
+            "error": "API key not configured",
+            "last_check": datetime.now(timezone.utc).isoformat()
+        }
+    
+    start_time = time.time()
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel("gemini-2.0-flash")
+        response = model.generate_content("ping", generation_config={"max_output_tokens": 1})
+        latency_ms = int((time.time() - start_time) * 1000)
+        
+        return {
+            "service": "gemini",
+            "status": "healthy",
+            "latency_ms": latency_ms,
+            "last_check": datetime.now(timezone.utc).isoformat()
+        }
+    except Exception as e:
+        return {
+            "service": "gemini",
+            "status": "unhealthy",
+            "error": str(e),
+            "last_check": datetime.now(timezone.utc).isoformat()
+        }
+
+
+@router.get("/osm")
+async def check_osm_health():
+    return await check_service_health(
+        name="openstreetmap",
+        url="https://overpass-api.de/api/status",
+        timeout=10.0
+    )
+
+
+@router.get("/openfoodfacts")
+async def check_openfoodfacts_health():
+    return await check_service_health(
+        name="openfoodfacts",
+        url="https://world.openfoodfacts.org/api/v2/product/737628064502.json",
+        timeout=10.0
+    )
