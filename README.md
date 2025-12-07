@@ -281,4 +281,14 @@ TrashIABackend/
 
 ## License
 
-This project is open source.
+Copyright © 2024 Luis Carlos Picado Rojas - All Rights Reserved
+
+This project is available for viewing and educational purposes only. See the [LICENSE](LICENSE) file for details.
+
+---
+
+## Author
+
+**Luis Carlos Picado Rojas**
+
+- GitHub: [@LuisCarlosP](https://github.com/LuisCarlosP)
