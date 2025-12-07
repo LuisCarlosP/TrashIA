@@ -7,14 +7,11 @@ from slowapi.util import get_remote_address
 
 from core.dependencies import get_prediction_service, PredictionService
 from exceptions import ModelLoadError, PredictionError, ImageProcessingError, ValidationError
+from config.settings import MAX_FILE_SIZE, ALLOWED_MIME_TYPES, RATE_LIMIT_PREDICT
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
-
-# Maximum file size: 5MB
-MAX_FILE_SIZE = 5 * 1024 * 1024
-ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/jpg']
 
 @router.options("/predict")
 async def predict_options():
@@ -22,7 +19,7 @@ async def predict_options():
     return JSONResponse(content={}, status_code=200)
 
 @router.post("/predict")
-@limiter.limit("10/minute")
+@limiter.limit(RATE_LIMIT_PREDICT)
 async def predict(
     request: Request,
     file: UploadFile = File(...),

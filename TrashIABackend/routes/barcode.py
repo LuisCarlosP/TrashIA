@@ -4,6 +4,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from services.barcode_service import fetch_product_by_barcode
+from config.settings import RATE_LIMIT_BARCODE, BARCODE_MIN_LENGTH
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/barcode", tags=["Barcode"])
@@ -15,12 +16,12 @@ limiter = Limiter(key_func=get_remote_address)
     summary="Search product by barcode",
     description="Queries Open Food Facts to get product information and recyclability"
 )
-@limiter.limit("30/minute")
+@limiter.limit(RATE_LIMIT_BARCODE)
 async def get_product_by_barcode(
     request: Request,
     barcode: str
 ):
-    if not barcode or len(barcode) < 8:
+    if not barcode or len(barcode) < BARCODE_MIN_LENGTH:
         raise HTTPException(status_code=400, detail="Invalid barcode")
     
     product = await fetch_product_by_barcode(barcode)

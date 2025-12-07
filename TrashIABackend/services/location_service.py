@@ -13,17 +13,26 @@ from datetime import datetime, timedelta
 
 from models.location_models import RecyclingPoint, Coordinates
 import pybreaker
+from config.settings import (
+    CIRCUIT_BREAKER_FAIL_MAX,
+    CIRCUIT_BREAKER_RESET_TIMEOUT,
+    LOCATION_CACHE_TTL,
+    HTTP_TIMEOUT_LOCATION,
+    OVERPASS_QUERY_TIMEOUT,
+    LOCATION_DEFAULT_RADIUS,
+    OVERPASS_SERVERS
+)
 
 # Circuit Breaker configuration
-# Opens after 5 failures, stays open for 60 seconds
-overpass_breaker = pybreaker.CircuitBreaker(fail_max=5, reset_timeout=60)
+overpass_breaker = pybreaker.CircuitBreaker(
+    fail_max=CIRCUIT_BREAKER_FAIL_MAX,
+    reset_timeout=CIRCUIT_BREAKER_RESET_TIMEOUT
+)
 
 logger = logging.getLogger(__name__)
 
-_cache: Dict[str, tuple] = {}
-CACHE_TTL = timedelta(minutes=30)
 
-OVERPASS_API_URL = "https://overpass-api.de/api/interpreter"
+_cache: Dict[str, tuple] = {}
 
 
 def _get_cache_key(lat: float, lon: float, radius: int) -> str:
@@ -36,7 +45,7 @@ def _is_cache_valid(cache_entry: tuple) -> bool:
     if not cache_entry:
         return False
     _, timestamp = cache_entry
-    return datetime.now() - timestamp < CACHE_TTL
+    return datetime.now() - timestamp < LOCATION_CACHE_TTL
 
 
 def calculate_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
@@ -172,7 +181,7 @@ def _parse_osm_element(element: Dict[str, Any], user_lat: float, user_lon: float
 async def fetch_recycling_points(
     latitude: float,
     longitude: float,
-    radius: int = 2000,
+    radius: int = LOCATION_DEFAULT_RADIUS,
     types_filter: Optional[List[str]] = None
 ) -> List[RecyclingPoint]:
     """
@@ -195,7 +204,7 @@ async def fetch_recycling_points(
         elements = cached_elements
     else:
         query = f"""
-        [out:json][timeout:25];
+        [out:json][timeout:{OVERPASS_QUERY_TIMEOUT}];
         (
           node["amenity"="recycling"](around:{radius},{latitude},{longitude});
           way["amenity"="recycling"](around:{radius},{latitude},{longitude});
@@ -205,19 +214,12 @@ async def fetch_recycling_points(
         out center tags;
         """
         
-        # List of Overpass servers for retries
-        overpass_servers = [
-            "https://overpass-api.de/api/interpreter",
-            "https://overpass.kumi.systems/api/interpreter",
-            "https://maps.mail.ru/osm/tools/overpass/api/interpreter",
-        ]
-        
         data = None
         last_error = None
         
-        for server_url in overpass_servers:
+        for server_url in OVERPASS_SERVERS:
             try:
-                async with httpx.AsyncClient(timeout=30.0) as client:
+                async with httpx.AsyncClient(timeout=HTTP_TIMEOUT_LOCATION) as client:
                     @overpass_breaker
                     async def make_request():
                         return await client.post(
@@ -296,7 +298,7 @@ class LocationService:
         self,
         latitude: float,
         longitude: float,
-        radius: int = 2000,
+        radius: int = LOCATION_DEFAULT_RADIUS,
         types_filter: Optional[List[str]] = None
     ) -> List[RecyclingPoint]:
         """Gets nearby recycling points."""

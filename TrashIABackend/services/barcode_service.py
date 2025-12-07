@@ -2,15 +2,25 @@ import logging
 from typing import Optional, Dict, Any
 import httpx
 import pybreaker
+from config.settings import (
+    CIRCUIT_BREAKER_FAIL_MAX,
+    CIRCUIT_BREAKER_RESET_TIMEOUT,
+    HTTP_TIMEOUT_BARCODE,
+    OPEN_FOOD_FACTS_URL,
+    UPCITEMDB_URL
+)
 
 # Circuit Breakers
-off_breaker = pybreaker.CircuitBreaker(fail_max=5, reset_timeout=60)
-upc_breaker = pybreaker.CircuitBreaker(fail_max=5, reset_timeout=60)
+off_breaker = pybreaker.CircuitBreaker(
+    fail_max=CIRCUIT_BREAKER_FAIL_MAX,
+    reset_timeout=CIRCUIT_BREAKER_RESET_TIMEOUT
+)
+upc_breaker = pybreaker.CircuitBreaker(
+    fail_max=CIRCUIT_BREAKER_FAIL_MAX,
+    reset_timeout=CIRCUIT_BREAKER_RESET_TIMEOUT
+)
 
 logger = logging.getLogger(__name__)
-
-OPEN_FOOD_FACTS_URL = "https://world.openfoodfacts.org/api/v2/product"
-UPCITEMDB_URL = "https://api.upcitemdb.com/prod/trial/lookup"
 
 PACKAGING_RECYCLABILITY = {
     "plastic": {"recyclable": True, "bin_type": "yellow"},
@@ -91,7 +101,7 @@ def analyze_packaging(text_to_analyze: str) -> list:
 async def fetch_from_upcitemdb(barcode: str) -> Optional[Dict[str, Any]]:
     """Queries the trial API of UPCitemdb."""
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=HTTP_TIMEOUT_BARCODE) as client:
             @upc_breaker
             async def make_upc_request():
                 return await client.get(f"{UPCITEMDB_URL}?upc={barcode}")
@@ -124,7 +134,7 @@ async def fetch_product_by_barcode(barcode: str) -> Optional[Dict[str, Any]]:
     product_data = None
 
     try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
+        async with httpx.AsyncClient(timeout=HTTP_TIMEOUT_BARCODE) as client:
             @off_breaker
             async def make_off_request():
                 return await client.get(f"{OPEN_FOOD_FACTS_URL}/{barcode}.json")

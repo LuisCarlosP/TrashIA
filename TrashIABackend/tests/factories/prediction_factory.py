@@ -3,12 +3,14 @@ from typing import Dict, Any, Optional
 from io import BytesIO
 from PIL import Image
 
+from config.settings import ALLOWED_MIME_TYPES, MAX_FILE_SIZE
+
 
 class PredictionDataFactory:
     
     MATERIALS = ['plastic', 'glass', 'metal', 'paper', 'cardboard', 'trash']
-    ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/jpg']
-    MAX_FILE_SIZE = 5 * 1024 * 1024
+    ALLOWED_MIME_TYPES = ALLOWED_MIME_TYPES
+    MAX_FILE_SIZE = MAX_FILE_SIZE
     
     @staticmethod
     def create_image_bytes(

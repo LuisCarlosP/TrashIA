@@ -9,6 +9,13 @@ from slowapi.util import get_remote_address
 
 from services.chat_service import ChatService, MaterialContext
 from exceptions.validation_exceptions import ValidationError
+from config.settings import (
+    RATE_LIMIT_CHAT_SESSION,
+    RATE_LIMIT_CHAT_MESSAGE,
+    RATE_LIMIT_CHAT_HISTORY,
+    RATE_LIMIT_CHAT_DELETE,
+    RATE_LIMIT_CHAT_UPDATE
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["Chat"])
@@ -80,7 +87,7 @@ class UpdateMaterialRequest(BaseModel):
         }
 
 @router.post("/session")
-@limiter.limit("20/minute")
+@limiter.limit(RATE_LIMIT_CHAT_SESSION)
 async def create_chat_session(
     request: Request,
     session_request: CreateSessionRequest,
@@ -119,7 +126,7 @@ async def create_chat_session(
         raise HTTPException(status_code=500, detail="Internal error creating chat session")
 
 @router.post("/message")
-@limiter.limit("30/minute")
+@limiter.limit(RATE_LIMIT_CHAT_MESSAGE)
 async def send_message(
     request: Request,
     message_request: SendMessageRequest,
@@ -146,7 +153,7 @@ async def send_message(
         raise HTTPException(status_code=500, detail="Internal error processing message")
 
 @router.get("/history/{session_id}")
-@limiter.limit("20/minute")
+@limiter.limit(RATE_LIMIT_CHAT_HISTORY)
 async def get_chat_history(
     request: Request,
     session_id: str,
@@ -171,7 +178,7 @@ async def get_chat_history(
         raise HTTPException(status_code=500, detail="Internal error getting history")
 
 @router.delete("/session/{session_id}")
-@limiter.limit("10/minute")
+@limiter.limit(RATE_LIMIT_CHAT_DELETE)
 async def delete_chat_session(
     request: Request,
     session_id: str,
@@ -198,7 +205,7 @@ async def delete_chat_session(
         raise HTTPException(status_code=500, detail="Internal error deleting session")
 
 @router.put("/material")
-@limiter.limit("20/minute")
+@limiter.limit(RATE_LIMIT_CHAT_UPDATE)
 async def update_material_context(
     request: Request,
     update_request: UpdateMaterialRequest,

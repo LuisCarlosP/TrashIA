@@ -21,6 +21,12 @@ from exceptions.location_exceptions import (
     InvalidCoordinatesError,
     InvalidRadiusError
 )
+from config.settings import (
+    RATE_LIMIT_LOCATION,
+    LOCATION_DEFAULT_RADIUS,
+    LOCATION_MIN_RADIUS,
+    LOCATION_MAX_RADIUS
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/location", tags=["Location"])
@@ -37,8 +43,8 @@ def validate_coordinates(latitude: float, longitude: float) -> None:
 
 def validate_radius(radius: int) -> None:
     """Validates that the radius is in the allowed range."""
-    if not (100 <= radius <= 50000):
-        raise InvalidRadiusError(f"Radius {radius} out of range (100 to 50000 meters)")
+    if not (LOCATION_MIN_RADIUS <= radius <= LOCATION_MAX_RADIUS):
+        raise InvalidRadiusError(f"Radius {radius} out of range ({LOCATION_MIN_RADIUS} to {LOCATION_MAX_RADIUS} meters)")
 
 
 @router.get(
@@ -47,12 +53,12 @@ def validate_radius(radius: int) -> None:
     summary="Search nearby recycling points",
     description="Searches for recycling points within a specific radius from given coordinates"
 )
-@limiter.limit("30/minute")
+@limiter.limit(RATE_LIMIT_LOCATION)
 async def get_recycling_points(
     request: Request,
     latitude: float = Query(..., ge=-90, le=90, description="Latitude of search center"),
     longitude: float = Query(..., ge=-180, le=180, description="Longitude of search center"),
-    radius: int = Query(2000, ge=100, le=50000, description="Search radius in meters"),
+    radius: int = Query(LOCATION_DEFAULT_RADIUS, ge=LOCATION_MIN_RADIUS, le=LOCATION_MAX_RADIUS, description="Search radius in meters"),
     types: Optional[str] = Query(
         None,
         description="Material types separated by comma (plastic,glass,paper,metal,cardboard,electronics,batteries)"
@@ -116,7 +122,7 @@ async def get_recycling_points(
     summary="Search recycling points (POST)",
     description="POST alternative to search recycling points"
 )
-@limiter.limit("30/minute")
+@limiter.limit(RATE_LIMIT_LOCATION)
 async def search_recycling_points(
     request: Request,
     search_request: RecyclingPointsRequest
