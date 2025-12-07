@@ -1,6 +1,6 @@
 import logging
 import uuid
-from typing import Optional
+from functools import lru_cache
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
@@ -21,22 +21,17 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["Chat"])
 limiter = Limiter(key_func=get_remote_address)
 
-# Global chat service instance
-chat_service: Optional[ChatService] = None
-
+@lru_cache()
 def get_chat_service() -> ChatService:
-    """Dependency to get the chat service"""
-    global chat_service
-    if chat_service is None:
-        try:
-            chat_service = ChatService()
-        except Exception as e:
-            logger.error(f"Error initializing ChatService: {e}")
-            raise HTTPException(
-                status_code=503,
-                detail="Chat service unavailable. Verify that GEMINI_API_KEY is configured."
-            )
-    return chat_service
+    """Dependency to get the chat service (thread-safe singleton via lru_cache)"""
+    try:
+        return ChatService()
+    except Exception as e:
+        logger.error(f"Error initializing ChatService: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Chat service unavailable. Verify that GEMINI_API_KEY is configured."
+        )
 
 # Request/response models
 class CreateSessionRequest(BaseModel):

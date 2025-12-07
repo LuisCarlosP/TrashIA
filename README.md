@@ -75,6 +75,7 @@ ALLOWED_ORIGINS=http://localhost:8080,https://luiscarlosp.github.io
 
 # External API Keys
 GEMINI_API_KEY=your_gemini_api_key
+GEMINI_MODEL=gemini-2.0-flash
 
 # File Upload Limits
 MAX_FILE_SIZE_MB=5
