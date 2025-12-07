@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 
 from config.settings import GEMINI_API_KEY, CHAT_PROMPTS, MATERIAL_TRANSLATIONS
+import os
 from exceptions.validation_exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
@@ -23,11 +24,12 @@ class ChatService:
         if not GEMINI_API_KEY:
             logger.warning("GEMINI_API_KEY not configured")
             raise ValueError("GEMINI_API_KEY must be configured in environment variables")
-        
+
         genai.configure(api_key=GEMINI_API_KEY)
-        self.model = genai.GenerativeModel('gemini-2.0-flash')
+        gemini_model = os.getenv("GEMINI_MODEL")
+        self.model = genai.GenerativeModel(gemini_model)
         self.chat_sessions: Dict[str, Any] = {}
-        logger.info("ChatService initialized successfully")
+        logger.info(f"ChatService initialized successfully with model: {gemini_model}")
     
     def _translate_material(self, material_type: str, language: str) -> str:
         """

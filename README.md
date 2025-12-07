@@ -60,9 +60,10 @@ Create a `.env` file in `TrashIABackend/`:
 ```env
 HOST=0.0.0.0
 PORT=8000
-MODEL_PATH=models/modelo_basura.h5
+MODEL_PATH=models/TrashIAv2.h5
 ALLOWED_ORIGINS=http://localhost:8080,https://luiscarlosp.github.io
 GEMINI_API_KEY=use_your_gemini_api_key
+GEMINI_MODEL=your_gemini_model
 # Security
 API_KEY=your_secret_api_key
 REDIS_URL=redis://localhost:6379/0
