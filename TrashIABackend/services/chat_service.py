@@ -1,5 +1,6 @@
 import logging
 import google.generativeai as genai
+from google.generativeai.types import HarmCategory, HarmBlockThreshold
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 
@@ -8,6 +9,13 @@ import os
 from exceptions.validation_exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
+
+SAFETY_SETTINGS = {
+    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+}
 
 @dataclass
 class MaterialContext:
@@ -27,7 +35,10 @@ class ChatService:
 
         genai.configure(api_key=GEMINI_API_KEY)
         gemini_model = os.getenv("GEMINI_MODEL")
-        self.model = genai.GenerativeModel(gemini_model)
+        self.model = genai.GenerativeModel(
+            gemini_model,
+            safety_settings=SAFETY_SETTINGS
+        )
         self.chat_sessions: Dict[str, Any] = {}
         logger.info(f"ChatService initialized successfully with model: {gemini_model}")
     
@@ -148,15 +159,26 @@ Guidelines: {guidelines}
             language = session["language"]
             system_context = session["system_context"]
             
-            full_message = f"{system_context}\n\nUser question: {message}"
+            full_message = f"{system_context}\n\nUser: {message}"
             
             # Configuration to limit response to approximately 150 words
             generation_config = genai.GenerationConfig(
                 max_output_tokens=200  # Approximately 150 words
             )
             
-            response = chat.send_message(full_message, generation_config=generation_config)
-            response_text = response.text
+            response = chat.send_message(
+                full_message, 
+                generation_config=generation_config,
+                safety_settings=SAFETY_SETTINGS
+            )
+            
+            # Check if response was blocked
+            if not response.candidates or not response.candidates[0].content.parts:
+                # Response was blocked - provide a safe fallback
+                logger.warning(f"Response blocked for session {session_id}")
+                response_text = CHAT_PROMPTS['messages']['off_topic'][language]
+            else:
+                response_text = response.text
             
             session["history"].append({
                 "role": "user",
