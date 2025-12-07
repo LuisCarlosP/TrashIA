@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
@@ -13,11 +14,27 @@ from routes.location import router as location_router
 from routes.barcode import router as barcode_router
 from routes.health import router as health_router
 from core.dependencies import get_prediction_service
-from core.security import get_api_key
+from core.security import get_api_key, validate_security_config
 from core.error_handler import register_exception_handlers
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """FastAPI lifespan event handler for proper startup/shutdown."""
+    # Startup
+    logger.info("Starting application...")
+    validate_security_config()
+    try:
+        get_prediction_service()
+        logger.info("Services initialized successfully")
+    except Exception as e:
+        logger.error(f"Error initializing services: {e}")
+        raise
+    yield
+    # Shutdown
+    logger.info("Shutting down application...")
 
 limiter = Limiter(key_func=get_remote_address, storage_uri=REDIS_URL)
 
@@ -34,7 +51,8 @@ app = FastAPI(
     title="TrashIA - AI Waste Classifier",
     description="API for classifying waste types and determining recyclability",
     version="1.0.0",
-    openapi_tags=tags_metadata
+    openapi_tags=tags_metadata,
+    lifespan=lifespan
 )
 
 app.state.limiter = limiter
@@ -86,12 +104,6 @@ async def root():
         }
     }
 
-try:
-    get_prediction_service()
-    logger.info("Services initialized successfully")
-except Exception as e:
-    logger.error(f"Error initializing services: {e}")
-    raise
 
 if __name__ == "__main__":
     import uvicorn

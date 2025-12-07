@@ -15,7 +15,13 @@ class ModelService:
     
     def __init__(self):
         self.model = None
-        self._load_model()
+        self._model_loaded = False
+    
+    def _ensure_model_loaded(self) -> None:
+        """Lazy load the model on first use."""
+        if not self._model_loaded:
+            self._load_model()
+            self._model_loaded = True
     
     def _load_model(self) -> None:
         try:
@@ -26,6 +32,7 @@ class ModelService:
             raise ModelLoadError(MODEL_PATH, str(e))
     
     def predict(self, img_array: np.ndarray) -> Tuple[str, float]:
+        self._ensure_model_loaded()
         try:
             predictions = self.model.predict(img_array)
             index = np.argmax(predictions)
