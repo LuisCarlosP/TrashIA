@@ -58,16 +58,64 @@ pip install -r requirements.txt
 ### 5. Configure environment variables
 Create a `.env` file in `TrashIABackend/`:
 ```env
+# Server Configuration
 HOST=0.0.0.0
 PORT=8000
+ENVIRONMENT=development
+
+# Model Configuration
 MODEL_PATH=models/TrashIAv2.h5
-ALLOWED_ORIGINS=http://localhost:8080,https://luiscarlosp.github.io
-GEMINI_API_KEY=use_your_gemini_api_key
-GEMINI_MODEL=your_gemini_model
+
+# Security
 API_KEY=your_secret_api_key
 REDIS_URL=redis://localhost:6379/0
-ENVIRONMENT=development
+
+# CORS
+ALLOWED_ORIGINS=http://localhost:8080,https://luiscarlosp.github.io
+
+# External API Keys
+GEMINI_API_KEY=your_gemini_api_key
+
+# File Upload Limits
+MAX_FILE_SIZE_MB=5
+ALLOWED_MIME_TYPES=image/jpeg,image/png,image/jpg
+
+# Rate Limiting (requests per minute)
+RATE_LIMIT_PREDICT=10/minute
+RATE_LIMIT_CHAT_SESSION=20/minute
+RATE_LIMIT_CHAT_MESSAGE=30/minute
+RATE_LIMIT_CHAT_HISTORY=20/minute
+RATE_LIMIT_CHAT_DELETE=10/minute
+RATE_LIMIT_CHAT_UPDATE=20/minute
+RATE_LIMIT_LOCATION=30/minute
+RATE_LIMIT_BARCODE=30/minute
+
+# Circuit Breaker
+CIRCUIT_BREAKER_FAIL_MAX=5
+CIRCUIT_BREAKER_RESET_TIMEOUT=60
+
+# HTTP Timeouts (seconds)
+HTTP_TIMEOUT_LOCATION=30.0
+HTTP_TIMEOUT_BARCODE=10.0
+HTTP_TIMEOUT_HEALTH_CHECK=5.0
+OVERPASS_QUERY_TIMEOUT=25
+
+# Location Service
+LOCATION_CACHE_TTL_MINUTES=30
+LOCATION_DEFAULT_RADIUS=2000
+LOCATION_MIN_RADIUS=100
+LOCATION_MAX_RADIUS=50000
+
+# Barcode Service
+BARCODE_MIN_LENGTH=8
+
+# External API URLs
+OPEN_FOOD_FACTS_URL=https://world.openfoodfacts.org/api/v2/product
+UPCITEMDB_URL=https://api.upcitemdb.com/prod/trial/lookup
+OVERPASS_SERVERS=https://overpass-api.de/api/interpreter,https://overpass.kumi.systems/api/interpreter,https://maps.mail.ru/osm/tools/overpass/api/interpreter
 ```
+
+> **Note:** All environment variables are required. The application will fail to start if any are missing.
 
 ### 6. Run the application
 ```bash
