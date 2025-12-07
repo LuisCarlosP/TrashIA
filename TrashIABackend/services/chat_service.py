@@ -41,57 +41,35 @@ class ChatService:
     
     def _build_system_context(self, material_context: Optional[MaterialContext], language: str = "en") -> str:
         """
-        Builds the system context with prompts from new JSON structure
+        Builds the system context with prompts optimized for Gemini 2.5 Flash.
+        Uses natural language to avoid triggering safety filters.
         """
         lang_key = language if language in ["en", "es"] else "en"
         
-        # Build identity section
+        # Get identity description
         identity = CHAT_PROMPTS['identity']
         identity_desc = identity[f'description_{lang_key}']
         
-        # Build name rule
-        name_rule = CHAT_PROMPTS['name_rule'][lang_key]
-        
-        # Build topic detection
-        topic_detection = CHAT_PROMPTS['topic_detection'][lang_key]
-        
-        # Build off-topic rule
-        off_topic_rule = CHAT_PROMPTS['off_topic_rule'][lang_key]
-        
-        # Build behavior rules
+        # Get behavior guidelines (as natural text, not strict rules)
         behavior_rules = CHAT_PROMPTS['behavior_rules'][lang_key]
-        behavior_rules_text = "\n".join([f"- {rule}" for rule in behavior_rules])
+        guidelines = " ".join(behavior_rules)
         
-        # Build response logic
-        response_logic = CHAT_PROMPTS['response_logic'][lang_key]
-        
-        # Build material context section
-        material_context_prompt = ""
+        # Build material context if available
+        material_info = ""
         if material_context:
             material_template = CHAT_PROMPTS['material_context'][lang_key]
-            material_context_prompt = material_template.format(
+            material_info = material_template.format(
                 material_type=material_context.material_type
             )
         
-        # Combine all sections into the system prompt
+        # Create a conversational, friendly prompt
         context = f"""{identity_desc}
 
-{name_rule}
+Guidelines: {guidelines}
 
-{topic_detection}
-
-{off_topic_rule}
-
-Behavior Rules:
-{behavior_rules_text}
-
-{response_logic}
-"""
+{material_info}"""
         
-        if material_context_prompt:
-            context += f"\n{material_context_prompt}"
-        
-        return context
+        return context.strip()
     
     def create_chat_session(
         self, 
