@@ -3,6 +3,7 @@ import uuid
 from functools import lru_cache
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
+from typing import Optional
 from pydantic import BaseModel, Field
 from slowapi import Limiter
 from slowapi.util import get_remote_address
