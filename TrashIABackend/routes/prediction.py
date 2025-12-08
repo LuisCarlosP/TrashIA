@@ -13,11 +13,6 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
-@router.options("/predict")
-async def predict_options():
-    """Handle CORS preflight requests"""
-    return JSONResponse(content={}, status_code=200)
-
 @router.post("/predict")
 @limiter.limit(RATE_LIMIT_PREDICT)
 async def predict(
