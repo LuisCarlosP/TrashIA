@@ -7,23 +7,11 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     envVars:
-      - key: HOST
-        value: 0.0.0.0
-      - key: PORT
-        value: 8000
-      - key: MODEL_PATH
-        value: models/TrashIAv2.h5
-      - key: ALLOWED_ORIGINS
-        value: "*"
-      - key: ENVIRONMENT
-        value: production
       - key: REDIS_URL
         fromService:
           type: redis
           name: trashia-redis
           property: connectionString
-      - key: API_KEY
-        generateValue: true 
     healthCheckPath: /health
 
   - type: redis
