@@ -106,9 +106,12 @@ class ChatService:
             language = session["language"]
             system_context = session["system_context"]
             
-            full_message = f"{system_context}\n\nUser: {message}"
+            if len(session["history"]) == 0:
+                full_message = f"{system_context}\n\nUser: {message}"
+            else:
+                full_message = message
             
-            generation_config = genai.GenerationConfig(max_output_tokens=500)
+            generation_config = genai.GenerationConfig(max_output_tokens=1500)
             
             response = chat.send_message(
                 full_message, 

@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     # EXTERNAL API KEYS
     # =========================================================================
     GEMINI_API_KEY: str = Field(description="Google Gemini API key")
+    GEMINI_MODEL: str = Field(default="gemini-2.5-flash", description="Gemini model to use")
     
     # =========================================================================
     # SERVER CONFIGURATION
@@ -228,6 +229,7 @@ ALLOWED_ORIGINS = _settings.allowed_origins_list
 
 # API Keys
 GEMINI_API_KEY = _settings.GEMINI_API_KEY
+GEMINI_MODEL = _settings.GEMINI_MODEL
 
 # Server
 HOST = _settings.HOST
