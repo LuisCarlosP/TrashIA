@@ -338,7 +338,7 @@ TrashIABackend/
 
 ## License
 
-Copyright © 2024 Luis Carlos Picado Rojas - All Rights Reserved
+Copyright © 2025 Luis Carlos Picado Rojas - All Rights Reserved
 
 This project is available for viewing and educational purposes only. See the [LICENSE](LICENSE) file for details.
 
