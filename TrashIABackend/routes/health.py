@@ -3,9 +3,10 @@ import time
 from datetime import datetime, timezone
 from typing import Dict, Any
 import httpx
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from config.settings import GEMINI_API_KEY, GEMINI_MODEL
+from core.dependencies import get_prediction_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/health")
@@ -62,9 +63,43 @@ async def health_check():
     }
 
 
+def check_model_health() -> Dict[str, Any]:
+    """Check ML model health status."""
+    try:
+        prediction_service = get_prediction_service()
+        health_info = prediction_service.check_model_health()
+        health_info["service"] = "ml_model"
+        health_info["last_check"] = datetime.now(timezone.utc).isoformat()
+        return health_info
+    except Exception as e:
+        return {
+            "service": "ml_model",
+            "status": "unhealthy",
+            "model_loaded": False,
+            "error": str(e),
+            "last_check": datetime.now(timezone.utc).isoformat()
+        }
+
+
+@router.get("/model")
+async def check_model_health_endpoint():
+    """
+    Check ML model availability and health.
+    
+    Returns detailed status of the machine learning model including:
+    - Whether the model is loaded
+    - Any initialization errors
+    - Model status (healthy/unhealthy)
+    """
+    return check_model_health()
+
 @router.get("/dependencies")
 async def check_all_dependencies():
     results = {}
+    
+    # Check ML model health
+    model_result = check_model_health()
+    results["ml_model"] = model_result
     
     gemini_result = await check_gemini_health()
     results["gemini"] = gemini_result

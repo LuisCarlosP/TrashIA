@@ -26,12 +26,25 @@ async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting application...")
     validate_security_config()
+    
+    # Initialize prediction service with graceful degradation
     try:
-        get_prediction_service()
-        logger.info("Services initialized successfully")
+        prediction_service = get_prediction_service()
+        app.state.prediction_service = prediction_service
+        
+        if prediction_service.model_available:
+            logger.info("ML model initialized successfully")
+            app.state.model_status = "healthy"
+        else:
+            logger.warning(f"ML model not available: {prediction_service.model_error}")
+            logger.warning("Application will continue with degraded functionality (prediction endpoint unavailable)")
+            app.state.model_status = "unavailable"
     except Exception as e:
-        logger.error(f"Error initializing services: {e}")
-        raise
+        logger.error(f"Critical error initializing services: {e}")
+        app.state.prediction_service = None
+        app.state.model_status = "error"
+    
+    logger.info("Services initialization complete")
     yield
     # Shutdown
     logger.info("Shutting down application...")

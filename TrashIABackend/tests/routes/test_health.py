@@ -50,3 +50,24 @@ def test_openfoodfacts_health_endpoint():
     data = response.json()
     assert data["service"] == "openfoodfacts"
     assert "status" in data
+
+
+def test_model_health_endpoint():
+    """Test the ML model health check endpoint."""
+    response = client.get("/health/model")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["service"] == "ml_model"
+    assert "status" in data
+    assert "model_loaded" in data
+    assert "last_check" in data
+
+
+def test_dependencies_includes_model():
+    """Test that dependencies endpoint includes ML model status."""
+    response = client.get("/health/dependencies")
+    assert response.status_code == 200
+    data = response.json()
+    assert "ml_model" in data["dependencies"]
+    assert "status" in data["dependencies"]["ml_model"]
+
