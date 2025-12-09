@@ -153,6 +153,7 @@ pytest tests/integration/test_file_validation.py -v
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/health` | Check API status |
+| GET | `/health/model` | Check ML model availability and health |
 | GET | `/health/dependencies` | Check all external dependencies |
 | GET | `/health/gemini` | Check Gemini API status |
 | GET | `/health/osm` | Check OpenStreetMap status |
@@ -262,6 +263,8 @@ TrashIABackend/
 ├── run.py                 # Startup script
 ├── requirements.txt       # Python dependencies
 ├── Dockerfile             # Docker configuration
+├── render.yaml            # Render deployment configuration
+├── .dockerignore          # Docker ignore patterns
 ├── config/
 │   ├── settings.py        # Configuration and environment variables
 │   ├── chat_prompts.json  # AI chat prompts
@@ -272,6 +275,7 @@ TrashIABackend/
 │   └── error_handler.py   # Structured error responses
 ├── exceptions/
 │   ├── base_exception.py  # Base exception class
+│   ├── external_api_exceptions.py # External API exceptions
 │   ├── image_exceptions.py
 │   ├── location_exceptions.py
 │   ├── model_exceptions.py
@@ -293,6 +297,10 @@ TrashIABackend/
 └── tests/
     ├── conftest.py         # Test configuration
     ├── factories/          # Test data factories
+    │   ├── barcode_factory.py
+    │   ├── chat_factory.py
+    │   ├── location_factory.py
+    │   └── prediction_factory.py
     ├── integration/        # Integration tests
     │   ├── test_file_validation.py
     │   ├── test_rate_limiting.py
