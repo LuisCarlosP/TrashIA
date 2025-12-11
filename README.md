@@ -2,7 +2,7 @@
 
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/LuisCarlosP/TrashIA)
 
-REST API built with FastAPI and TensorFlow to classify types of trash, determine recyclability, and provide AI-powered chat assistance.
+REST API built with FastAPI and TensorFlow to classify types of trash, determine recyclability, and provide AI-powered chat assistance. The backend follows SOLID principles with dependency injection and protocol-based abstractions.
 
 ## Features
 
@@ -17,6 +17,7 @@ REST API built with FastAPI and TensorFlow to classify types of trash, determine
 - Automatic documentation with Swagger/OpenAPI
 - Security: API Key authentication, Redis-based rate limiting, and Circuit Breakers
 - Comprehensive test suite
+- SOLID architecture with dependency injection and protocol-based abstractions
 
 
 ## Requirements
@@ -255,6 +256,19 @@ All endpoints (except `/health` and `/docs`) require authentication via header:
 | plastic | Yes | Plastics |
 | trash | No | General non-recyclable waste |
 
+## Architecture
+
+The backend follows SOLID principles:
+
+| Principle | Implementation |
+|-----------|----------------|
+| Single Responsibility | Each service class has one responsibility (ChatService, BarcodeService, LocationService) |
+| Open/Closed | Services accept provider lists, allowing new providers without code modification |
+| Liskov Substitution | All providers are interchangeable (OpenFoodFactsProvider, UPCItemDBProvider) |
+| Interface Segregation | Small, focused protocols (ChatProviderProtocol, BarcodeProviderProtocol) |
+| Dependency Inversion | Services depend on abstractions (protocols), not concrete implementations |
+
+
 ## Project Structure
 
 ```
@@ -264,15 +278,23 @@ TrashIABackend/
 ├── requirements.txt       # Python dependencies
 ├── Dockerfile             # Docker configuration
 ├── render.yaml            # Render deployment configuration
-├── .dockerignore          # Docker ignore patterns
 ├── config/
 │   ├── settings.py        # Configuration and environment variables
 │   ├── chat_prompts.json  # AI chat prompts
 │   └── recyclable_info.json # Material information
 ├── core/
 │   ├── dependencies.py    # Dependency injection
+│   ├── file_validator.py  # File validation logic
 │   ├── security.py        # Security and authentication
-│   └── error_handler.py   # Structured error responses
+│   ├── error_handler.py   # Structured error responses
+│   └── protocols/         # Protocol definitions (interfaces)
+│       ├── ai.py          # AI provider protocol
+│       ├── barcode.py     # Barcode provider protocol
+│       ├── cache.py       # Cache protocol
+│       ├── chat.py        # Chat provider and repository protocols
+│       ├── http.py        # HTTP client protocol
+│       ├── response.py    # Response builder protocol
+│       └── validation.py  # Validation protocol
 ├── exceptions/
 │   ├── base_exception.py  # Base exception class
 │   ├── external_api_exceptions.py # External API exceptions
@@ -282,7 +304,7 @@ TrashIABackend/
 │   └── validation_exceptions.py
 ├── models/
 │   ├── location_models.py  # Location data models
-│   └── TrashIAv2.h5       # Main model
+│   └── TrashIAv2.h5       # Main classification model
 ├── routes/
 │   ├── prediction.py      # Prediction routes
 │   ├── chat.py            # Chat routes
@@ -292,8 +314,14 @@ TrashIABackend/
 ├── services/
 │   ├── trash_services.py  # Classification logic
 │   ├── chat_service.py    # Gemini chat logic
+│   ├── chat_session_repository.py # Session storage
 │   ├── location_service.py # OpenStreetMap integration
-│   └── barcode_service.py # Barcode product lookup
+│   ├── location_cache.py  # Location caching
+│   ├── barcode_service.py # Barcode product lookup
+│   ├── osm_parser.py      # OpenStreetMap response parser
+│   └── providers/         # External API providers
+│       ├── gemini_provider.py    # Gemini AI provider
+│       └── barcode_providers.py  # OpenFoodFacts and UPCItemDB providers
 └── tests/
     ├── conftest.py         # Test configuration
     ├── factories/          # Test data factories
@@ -338,7 +366,7 @@ TrashIABackend/
 
 ## License
 
-Copyright © 2025 Luis Carlos Picado Rojas - All Rights Reserved
+Copyright 2025 Luis Carlos Picado Rojas - All Rights Reserved
 
 This project is available for viewing and educational purposes only. See the [LICENSE](LICENSE) file for details.
 

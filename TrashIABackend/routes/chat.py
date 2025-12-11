@@ -24,9 +24,13 @@ limiter = Limiter(key_func=get_remote_address)
 
 @lru_cache()
 def get_chat_service() -> ChatService:
-    """Dependency to get the chat service (thread-safe singleton via lru_cache)"""
     try:
-        return ChatService()
+        from services.providers.gemini_provider import GeminiChatProvider
+        from services.chat_session_repository import InMemoryChatSessionRepository
+        
+        provider = GeminiChatProvider()
+        repository = InMemoryChatSessionRepository()
+        return ChatService(provider, repository)
     except Exception as e:
         logger.error(f"Error initializing ChatService: {e}")
         raise HTTPException(

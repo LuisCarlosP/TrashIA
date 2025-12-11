@@ -6,20 +6,32 @@ from services.trash_services import ModelService, ImageProcessor, ResponseFormat
 logger = logging.getLogger(__name__)
 
 class PredictionService:
-    def __init__(self):
-        self.image_processor = ImageProcessor()
-        self.response_formatter = ResponseFormatter()
+    
+    def __init__(
+        self, 
+        model_service: ModelService = None,
+        image_processor: ImageProcessor = None,
+        response_formatter: ResponseFormatter = None
+    ):
+        self.image_processor = image_processor or ImageProcessor()
+        self.response_formatter = response_formatter or ResponseFormatter()
         self._model_available = False
         self._model_error: Optional[str] = None
-        self.model_service: Optional[ModelService] = None
         
-        try:
-            self.model_service = ModelService()
+        # Only create ModelService if not injected
+        if model_service is not None:
+            self.model_service = model_service
             self._model_available = True
-            logger.info("ModelService initialized successfully")
-        except Exception as e:
-            self._model_error = str(e)
-            logger.error(f"Failed to initialize ModelService: {e}")
+            logger.info("ModelService injected successfully")
+        else:
+            try:
+                self.model_service = ModelService()
+                self._model_available = True
+                logger.info("ModelService initialized successfully")
+            except Exception as e:
+                self.model_service = None
+                self._model_error = str(e)
+                logger.error(f"Failed to initialize ModelService: {e}")
     
     @property
     def model_available(self) -> bool:

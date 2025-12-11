@@ -1,16 +1,11 @@
 import logging
-from typing import Optional, Dict, Any
-import httpx
+from typing import List, Dict, Any, Optional
 import pybreaker
-from config.settings import (
-    CIRCUIT_BREAKER_FAIL_MAX,
-    CIRCUIT_BREAKER_RESET_TIMEOUT,
-    HTTP_TIMEOUT_BARCODE,
-    OPEN_FOOD_FACTS_URL,
-    UPCITEMDB_URL
-)
+from config.settings import CIRCUIT_BREAKER_FAIL_MAX, CIRCUIT_BREAKER_RESET_TIMEOUT
+from core.protocols.barcode import BarcodeProviderProtocol
 
-# Circuit Breakers
+logger = logging.getLogger(__name__)
+
 off_breaker = pybreaker.CircuitBreaker(
     fail_max=CIRCUIT_BREAKER_FAIL_MAX,
     reset_timeout=CIRCUIT_BREAKER_RESET_TIMEOUT
@@ -19,8 +14,6 @@ upc_breaker = pybreaker.CircuitBreaker(
     fail_max=CIRCUIT_BREAKER_FAIL_MAX,
     reset_timeout=CIRCUIT_BREAKER_RESET_TIMEOUT
 )
-
-logger = logging.getLogger(__name__)
 
 PACKAGING_RECYCLABILITY = {
     "plastic": {"recyclable": True, "bin_type": "yellow"},
@@ -73,113 +66,91 @@ BIN_INFO = {
     }
 }
 
-def analyze_packaging(text_to_analyze: str) -> list:
-    if not text_to_analyze:
-        return []
 
-    text_lower = text_to_analyze.lower()
-    detected_bins = set()
-    results = []
+class PackagingAnalyzer:
+    def analyze(self, text_to_analyze: str) -> List[Dict[str, Any]]:
+        if not text_to_analyze:
+            return []
 
-    for material_key, info in PACKAGING_RECYCLABILITY.items():
-        if material_key in text_lower:
-            detected_bins.add(info["bin_type"])
+        text_lower = text_to_analyze.lower()
+        detected_bins = set()
+        results = []
 
-    for bin_type in detected_bins:
-        bin_data = BIN_INFO.get(bin_type, BIN_INFO["unknown"])
+        for material_key, info in PACKAGING_RECYCLABILITY.items():
+            if material_key in text_lower:
+                detected_bins.add(info["bin_type"])
 
-        results.append({
-            "material": "Recyclable Material",
-            "recyclable": True,
-            "bin": bin_data["bin"],
-            "tip": bin_data["tip"],
-            "bin_type": bin_type
-        })
+        for bin_type in detected_bins:
+            bin_data = BIN_INFO.get(bin_type, BIN_INFO["unknown"])
+            results.append({
+                "material": "Recyclable Material",
+                "recyclable": True,
+                "bin": bin_data["bin"],
+                "tip": bin_data["tip"],
+                "bin_type": bin_type
+            })
 
-    return results
+        return results
 
-async def fetch_from_upcitemdb(barcode: str) -> Optional[Dict[str, Any]]:
-    """Queries the trial API of UPCitemdb."""
-    try:
-        async with httpx.AsyncClient(timeout=HTTP_TIMEOUT_BARCODE) as client:
-            @upc_breaker
-            async def make_upc_request():
-                return await client.get(f"{UPCITEMDB_URL}?upc={barcode}")
-            
-            response = await make_upc_request()
-            response.raise_for_status()
-            data = response.json()
+    def get_default_info(self) -> List[Dict[str, Any]]:
+        default_bin = BIN_INFO["unknown"]
+        return [{
+            "material": "Unknown",
+            "recyclable": None,
+            "bin": None,
+            "tip": default_bin["tip"],
+            "bin_type": "unknown"
+        }]
 
-            if data.get("code") == "OK" and data.get("total", 0) > 0:
-                item = data["items"][0]
-                return {
-                    "found": True,
-                    "barcode": barcode,
-                    "name": item.get("title", "Product without name"),
-                    "brand": item.get("brand", ""),
-                    "image_url": item.get("images", [None])[0],
-                    "packaging": item.get("description", ""),
-                    "categories": item.get("category", ""),
-                    "source": "upcitemdb"
-                }
 
-    except pybreaker.CircuitBreakerError:
-        logger.warning(f"Circuit breaker open for UPCitemdb {barcode}")
-    except Exception as e:
-        logger.warning(f"UPCitemdb failed for {barcode}: {e}")
+class BarcodeService:
+    def __init__(
+        self,
+        providers: List[BarcodeProviderProtocol],
+        analyzer: PackagingAnalyzer = None
+    ):
+        self._providers = providers
+        self._analyzer = analyzer or PackagingAnalyzer()
+        logger.info(f"BarcodeService initialized with {len(providers)} providers")
 
-    return None
-
-async def fetch_product_by_barcode(barcode: str) -> Optional[Dict[str, Any]]:
-    product_data = None
-
-    try:
-        async with httpx.AsyncClient(timeout=HTTP_TIMEOUT_BARCODE) as client:
-            @off_breaker
-            async def make_off_request():
-                return await client.get(f"{OPEN_FOOD_FACTS_URL}/{barcode}.json")
-            
-            response = await make_off_request()
-            if response.status_code == 200:
-                data = response.json()
-                if data.get("status") == 1:
-                    product = data.get("product", {})
-                    product_data = {
-                        "found": True,
-                        "barcode": barcode,
-                        "name": product.get("product_name_en", product.get("product_name", "Product without name")),
-                        "brand": product.get("brands", ""),
-                        "image_url": product.get("image_url") or product.get("image_front_url"),
-                        "packaging": product.get("packaging", "") or product.get("packaging_text", ""),
-                        "categories": product.get("categories", ""),
-                        "source": "openfoodfacts"
-                    }
-
-    except pybreaker.CircuitBreakerError:
-        logger.warning(f"Circuit breaker open for OpenFoodFacts {barcode}")
-    except Exception as e:
-        logger.error(f"Error OpenFoodFacts {barcode}: {e}")
-
-    if not product_data:
-        logger.info(f"Product {barcode} not found in OFF, trying UPCitemdb...")
-        product_data = await fetch_from_upcitemdb(barcode)
-
-    if product_data:
+    async def fetch_product(self, barcode: str) -> Optional[Dict[str, Any]]:
+        product_data = None
+        
+        for provider in self._providers:
+            product_data = await provider.fetch_product(barcode)
+            if product_data:
+                logger.info(f"Product {barcode} found in {provider.name}")
+                break
+        
+        if not product_data:
+            logger.info(f"Product not found in any database: {barcode}")
+            return None
+        
         analysis_text = f"{product_data.get('packaging', '')} {product_data.get('categories', '')}"
-        recycling_info = analyze_packaging(analysis_text)
-
+        recycling_info = self._analyzer.analyze(analysis_text)
+        
         if not recycling_info:
-             default_bin = BIN_INFO["unknown"]
-             recycling_info = [{
-                "material": "Unknown",
-                "recyclable": None,
-                "bin": None,
-                "tip": default_bin["tip"],
-                "bin_type": "unknown"
-            }]
-
+            recycling_info = self._analyzer.get_default_info()
+        
         product_data["recycling_info"] = recycling_info
         return product_data
 
-    logger.info(f"Product not found in any database: {barcode}")
-    return None
+
+async def fetch_product_by_barcode(barcode: str) -> Optional[Dict[str, Any]]:
+    from services.providers.barcode_providers import OpenFoodFactsProvider, UPCItemDBProvider
+    
+    providers = [OpenFoodFactsProvider(), UPCItemDBProvider()]
+    service = BarcodeService(providers)
+    return await service.fetch_product(barcode)
+
+
+async def fetch_from_upcitemdb(barcode: str) -> Optional[Dict[str, Any]]:
+    from services.providers.barcode_providers import UPCItemDBProvider
+    
+    provider = UPCItemDBProvider()
+    return await provider.fetch_product(barcode)
+
+
+def analyze_packaging(text_to_analyze: str) -> List[Dict[str, Any]]:
+    analyzer = PackagingAnalyzer()
+    return analyzer.analyze(text_to_analyze)
