@@ -72,3 +72,24 @@ class PredictionService:
 @lru_cache()
 def get_prediction_service() -> PredictionService:
     return PredictionService()
+
+
+@lru_cache()
+def get_chat_service():
+    """
+    Cached ChatService instance for dependency injection.
+    Uses lru_cache to ensure only one instance is created (thread-safe singleton).
+    """
+    from services.chat_service import ChatService
+    from services.providers.gemini_provider import GeminiChatProvider
+    from services.chat_session_repository import InMemoryChatSessionRepository
+    
+    try:
+        provider = GeminiChatProvider()
+        repository = InMemoryChatSessionRepository()
+        return ChatService(provider, repository)
+    except Exception as e:
+        logger.error(f"Error initializing ChatService: {e}")
+        raise RuntimeError(
+            f"Chat service unavailable. Verify that GEMINI_API_KEY is configured. Error: {e}"
+        )

@@ -1,6 +1,5 @@
 import logging
 import uuid
-from functools import lru_cache
 from fastapi import APIRouter, HTTPException, Depends, Request
 from fastapi.responses import JSONResponse
 from typing import Optional
@@ -9,6 +8,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from services.chat_service import ChatService, MaterialContext
+from core.dependencies import get_chat_service
 from exceptions.validation_exceptions import ValidationError
 from config.settings import (
     RATE_LIMIT_CHAT_SESSION,
@@ -21,22 +21,6 @@ from config.settings import (
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/chat", tags=["Chat"])
 limiter = Limiter(key_func=get_remote_address)
-
-@lru_cache()
-def get_chat_service() -> ChatService:
-    try:
-        from services.providers.gemini_provider import GeminiChatProvider
-        from services.chat_session_repository import InMemoryChatSessionRepository
-        
-        provider = GeminiChatProvider()
-        repository = InMemoryChatSessionRepository()
-        return ChatService(provider, repository)
-    except Exception as e:
-        logger.error(f"Error initializing ChatService: {e}")
-        raise HTTPException(
-            status_code=503,
-            detail="Chat service unavailable. Verify that GEMINI_API_KEY is configured."
-        )
 
 # Request/response models
 class CreateSessionRequest(BaseModel):

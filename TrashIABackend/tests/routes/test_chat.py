@@ -1,7 +1,7 @@
 import pytest
 from unittest.mock import MagicMock
 from app import app
-from routes.chat import get_chat_service
+from core.dependencies import get_chat_service
 from tests.factories import ChatDataFactory
 
 

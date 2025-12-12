@@ -70,7 +70,7 @@ class TestRateLimiting:
                 f"Unexpected response distribution: {responses}"
     
     def test_rate_limit_chat_session(self, rate_limit_client):
-        from routes.chat import get_chat_service
+        from core.dependencies import get_chat_service
         from app import app
         
         mock_service = MagicMock()
