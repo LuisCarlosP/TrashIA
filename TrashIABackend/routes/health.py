@@ -55,6 +55,7 @@ async def check_service_health(
 
 
 @router.get("")
+@router.head("")
 async def health_check():
     return {
         "status": "healthy",
