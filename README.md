@@ -75,7 +75,6 @@ REDIS_URL=redis://localhost:6379/0
 ALLOWED_ORIGINS=http://localhost:8080,https://luiscarlosp.github.io
 
 # External API Keys
-# External API Keys (Groq)
 GROQ_API_KEY=your_groq_api_key
 GROQ_MODEL=llama-3.3-70b-versatile
 
@@ -314,7 +313,7 @@ TrashIABackend/
 │   └── health.py          # Health check routes
 ├── services/
 │   ├── trash_services.py  # Classification logic
-│   ├── chat_service.py    # Gemini chat logic
+│   ├── chat_service.py    # Groq chat logic
 │   ├── chat_session_repository.py # Session storage
 │   ├── location_service.py # OpenStreetMap integration
 │   ├── location_cache.py  # Location caching
