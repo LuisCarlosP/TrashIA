@@ -40,8 +40,12 @@ class Settings(BaseSettings):
     # =========================================================================
     # EXTERNAL API KEYS
     # =========================================================================
-    GEMINI_API_KEY: str = Field(description="Google Gemini API key")
+    GEMINI_API_KEY: str = Field(default="", description="Google Gemini API key (optional)")
     GEMINI_MODEL: str = Field(default="gemini-2.5-flash", description="Gemini model to use")
+    
+    # Groq API (primary - free tier with generous limits)
+    GROQ_API_KEY: str = Field(description="Groq API key for LLM chat")
+    GROQ_MODEL: str = Field(default="llama-3.3-70b-versatile", description="Groq model to use")
     
     # =========================================================================
     # SERVER CONFIGURATION

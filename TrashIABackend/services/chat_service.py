@@ -24,8 +24,8 @@ class ChatService:
         session_repository: Optional[ChatSessionRepositoryProtocol] = None
     ):
         if chat_provider is None:
-            from services.providers.gemini_provider import GeminiChatProvider
-            chat_provider = GeminiChatProvider()
+            from services.providers.groq_provider import GroqChatProvider
+            chat_provider = GroqChatProvider()
         
         if session_repository is None:
             from services.chat_session_repository import InMemoryChatSessionRepository
