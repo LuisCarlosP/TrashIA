@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Optional, List, Dict
 from groq import Groq
-from config.settings import settings
+from config.settings import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +13,7 @@ class GroqChatProvider:
     """
     
     def __init__(self, api_key: str = None, model_name: str = None):
+        settings = get_settings()
         key = api_key or settings.GROQ_API_KEY
         if not key:
             raise ValueError("GROQ_API_KEY must be configured")

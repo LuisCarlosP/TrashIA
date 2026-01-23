@@ -12,7 +12,7 @@ from .location_exceptions import (
 )
 from .external_api_exceptions import (
     ExternalAPIError,
-    GeminiAPIError,
+    GroqAPIError,
     OpenFoodFactsError,
     UPCItemDBError,
     OpenStreetMapError,
@@ -32,7 +32,7 @@ __all__ = [
     'InvalidRadiusError',
     'NoResultsError',
     'ExternalAPIError',
-    'GeminiAPIError',
+    'GroqAPIError',
     'OpenFoodFactsError',
     'UPCItemDBError',
     'OpenStreetMapError',

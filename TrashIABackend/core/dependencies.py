@@ -81,15 +81,15 @@ def get_chat_service():
     Uses lru_cache to ensure only one instance is created (thread-safe singleton).
     """
     from services.chat_service import ChatService
-    from services.providers.gemini_provider import GeminiChatProvider
+    from services.providers.groq_provider import GroqChatProvider
     from services.chat_session_repository import InMemoryChatSessionRepository
     
     try:
-        provider = GeminiChatProvider()
+        provider = GroqChatProvider()
         repository = InMemoryChatSessionRepository()
         return ChatService(provider, repository)
     except Exception as e:
         logger.error(f"Error initializing ChatService: {e}")
         raise RuntimeError(
-            f"Chat service unavailable. Verify that GEMINI_API_KEY is configured. Error: {e}"
+            f"Chat service unavailable. Verify that GROQ_API_KEY is configured. Error: {e}"
         )

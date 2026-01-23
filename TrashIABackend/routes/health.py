@@ -5,14 +5,14 @@ from typing import Dict, Any
 import httpx
 from fastapi import APIRouter, Request
 
-from config.settings import GEMINI_API_KEY, GEMINI_MODEL
+
 from core.dependencies import get_prediction_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/health")
 
-_gemini_health_cache: Dict[str, Any] | None = None
-_gemini_health_cache_time: float | None = None
+_groq_health_cache: Dict[str, Any] | None = None
+_groq_health_cache_time: float | None = None
 
 
 async def check_service_health(
@@ -102,8 +102,8 @@ async def check_all_dependencies():
     model_result = check_model_health()
     results["ml_model"] = model_result
     
-    gemini_result = await check_gemini_health()
-    results["gemini"] = gemini_result
+    groq_result = await check_groq_health()
+    results["groq"] = groq_result
     
     osm_result = await check_osm_health()
     results["openstreetmap"] = osm_result
@@ -128,60 +128,74 @@ async def check_all_dependencies():
     }
 
 
-@router.get("/gemini")
-async def check_gemini_health():
+@router.get("/groq")
+async def check_groq_health():
     """
     Results are cached for 5 minutes.
     """
-    global _gemini_health_cache, _gemini_health_cache_time
+    global _groq_health_cache, _groq_health_cache_time
     
     cache_ttl_seconds = 300  # 5 minutes
     current_time = time.time()
-    if (_gemini_health_cache is not None and 
-        _gemini_health_cache_time is not None and
-        current_time - _gemini_health_cache_time < cache_ttl_seconds):
-        cached = _gemini_health_cache.copy()
-        cached["cached"] = True
-        cached["cache_expires_in_seconds"] = int(cache_ttl_seconds - (current_time - _gemini_health_cache_time))
-        return cached
     
-    if not GEMINI_API_KEY:
+    # Reuse existing cache variables for simplicity (renaming variables would require broader refactor)
+    # Ideally should be renamed to generic names or groq specific
+    if (_groq_health_cache is not None and 
+        _groq_health_cache_time is not None and
+        current_time - _groq_health_cache_time < cache_ttl_seconds):
+        cached = _groq_health_cache.copy()
+        if cached.get("service") == "groq": # Ensure we don't return old gemini cache
+            cached["cached"] = True
+            cached["cache_expires_in_seconds"] = int(cache_ttl_seconds - (current_time - _groq_health_cache_time))
+            return cached
+    
+    # Import here to avoid circular dependencies if any
+    from config.settings import get_settings
+    settings = get_settings()
+    
+    if not settings.GROQ_API_KEY:
         result = {
-            "service": "gemini",
+            "service": "groq",
             "status": "unhealthy",
             "error": "API key not configured",
             "last_check": datetime.now(timezone.utc).isoformat()
         }
-        _gemini_health_cache = result
-        _gemini_health_cache_time = current_time
+        _groq_health_cache = result
+        _groq_health_cache_time = current_time
         return result
     
     start_time = time.time()
     try:
-        import google.generativeai as genai
-        genai.configure(api_key=GEMINI_API_KEY)
-        model = genai.GenerativeModel(GEMINI_MODEL)
-        response = model.generate_content("ping", generation_config={"max_output_tokens": 1})
+        from groq import Groq
+        client = Groq(api_key=settings.GROQ_API_KEY)
+        
+        # Simple generation to check connectivity
+        response = client.chat.completions.create(
+            model=settings.GROQ_MODEL,
+            messages=[{"role": "user", "content": "ping"}],
+            max_tokens=1
+        )
+        
         latency_ms = int((time.time() - start_time) * 1000)
         
         result = {
-            "service": "gemini",
+            "service": "groq",
             "status": "healthy",
-            "model": GEMINI_MODEL,
+            "model": settings.GROQ_MODEL,
             "latency_ms": latency_ms,
             "last_check": datetime.now(timezone.utc).isoformat()
         }
     except Exception as e:
         result = {
-            "service": "gemini",
+            "service": "groq",
             "status": "unhealthy",
             "error": str(e),
             "last_check": datetime.now(timezone.utc).isoformat()
         }
     
     # Update cache
-    _gemini_health_cache = result
-    _gemini_health_cache_time = current_time
+    _groq_health_cache = result
+    _groq_health_cache_time = current_time
     
     return result
 

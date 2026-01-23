@@ -8,7 +8,7 @@ REST API built with FastAPI and TensorFlow to classify types of trash, determine
 
 - Image classification into 6 categories: cardboard, glass, metal, paper, plastic, and general trash
 - Automatic recyclability determination
-- Interactive AI chat (Google Gemini) for recycling queries
+- Interactive AI chat (Groq/Llama) for recycling queries
 - Barcode scanning for product information and recyclability
 - Recycling point location search using OpenStreetMap
 - Rate limiting for API protection
@@ -24,7 +24,7 @@ REST API built with FastAPI and TensorFlow to classify types of trash, determine
 
 - Python 3.11.9
 - pip
-- Google Gemini API key (optional, for chat functionality)
+- Groq API key (optional, for chat functionality)
 - Redis (required for rate limiting)
 
 
@@ -75,8 +75,9 @@ REDIS_URL=redis://localhost:6379/0
 ALLOWED_ORIGINS=http://localhost:8080,https://luiscarlosp.github.io
 
 # External API Keys
-GEMINI_API_KEY=your_gemini_api_key
-GEMINI_MODEL=gemini-2.0-flash
+# External API Keys (Groq)
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=llama-3.3-70b-versatile
 
 # File Upload Limits
 MAX_FILE_SIZE_MB=5
@@ -156,7 +157,7 @@ pytest tests/integration/test_file_validation.py -v
 | GET | `/health` | Check API status |
 | GET | `/health/model` | Check ML model availability and health |
 | GET | `/health/dependencies` | Check all external dependencies |
-| GET | `/health/gemini` | Check Gemini API status |
+| GET | `/health/groq` | Check Groq API status (cached 5 min) |
 | GET | `/health/osm` | Check OpenStreetMap status |
 | GET | `/health/openfoodfacts` | Check OpenFoodFacts status |
 
@@ -320,7 +321,7 @@ TrashIABackend/
 │   ├── barcode_service.py # Barcode product lookup
 │   ├── osm_parser.py      # OpenStreetMap response parser
 │   └── providers/         # External API providers
-│       ├── gemini_provider.py    # Gemini AI provider
+│       ├── groq_provider.py    # Groq AI provider
 │       └── barcode_providers.py  # OpenFoodFacts and UPCItemDB providers
 └── tests/
     ├── conftest.py         # Test configuration
@@ -355,7 +356,7 @@ TrashIABackend/
 | Uvicorn | 0.35.0 | ASGI server |
 | Pillow | 11.3.0 | Image processing |
 | Pydantic | 2.11.7 | Data validation |
-| Google Generative AI | 0.8.3 | Gemini chat |
+| Groq Cloud | 1.0.0 | AI Chat (Llama) |
 | SlowAPI | 0.1.9 | Rate limiting |
 | python-magic | 0.4.27 | MIME validation |
 | httpx | 0.28.1 | HTTP client |

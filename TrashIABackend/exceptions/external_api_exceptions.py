@@ -24,18 +24,18 @@ class ExternalAPIError(TrashIAException):
         super().__init__(message, code, details=combined_details)
 
 
-class GeminiAPIError(ExternalAPIError):
+class GroqAPIError(ExternalAPIError):
     
     def __init__(
         self, 
-        message: str = "Gemini API error",
+        message: str = "Groq API error",
         original_error: Optional[str] = None,
         code: int = 503
     ):
         super().__init__(
             message=message, 
             code=code, 
-            service="gemini",
+            service="groq",
             original_error=original_error
         )
 

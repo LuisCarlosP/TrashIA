@@ -28,11 +28,11 @@ def test_health_endpoint_no_auth_required():
     assert response.status_code == 200
 
 
-def test_gemini_health_endpoint():
-    response = client.get("/health/gemini")
+def test_groq_health_endpoint():
+    response = client.get("/health/groq")
     assert response.status_code == 200
     data = response.json()
-    assert data["service"] == "gemini"
+    assert data["service"] == "groq"
     assert "status" in data
 
 
