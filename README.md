@@ -11,11 +11,14 @@ REST API built with FastAPI and TensorFlow to classify types of trash, determine
 - Interactive AI chat (Groq/Llama) for recycling queries
 - Barcode scanning for product information and recyclability
 - Recycling point location search using OpenStreetMap
+- **User authentication with Supabase Auth**
+- **User profiles with profile picture upload**
+- **Email verification and password recovery**
 - Rate limiting for API protection
 - Multi-language support (English/Spanish)
 - File validation by MIME type
 - Automatic documentation with Swagger/OpenAPI
-- Security: API Key authentication, Redis-based rate limiting, and Circuit Breakers
+- Security: API Key authentication, JWT tokens, Redis-based rate limiting, and Circuit Breakers
 - Comprehensive test suite
 - SOLID architecture with dependency injection and protocol-based abstractions
 
@@ -26,6 +29,7 @@ REST API built with FastAPI and TensorFlow to classify types of trash, determine
 - pip
 - Groq API key (optional, for chat functionality)
 - Redis (required for rate limiting)
+- Supabase account (required for authentication)
 
 
 ## Local Installation
@@ -71,8 +75,16 @@ MODEL_PATH=models/TrashIAv2.h5
 API_KEY=your_secret_api_key
 REDIS_URL=redis://localhost:6379/0
 
+# Supabase Configuration
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_KEY=your_supabase_service_role_key
+
+# Frontend URL (for email redirects)
+FRONTEND_URL=http://localhost:5173
+
 # CORS
-ALLOWED_ORIGINS=http://localhost:8080,https://luiscarlosp.github.io
+ALLOWED_ORIGINS=http://localhost:5173,https://luiscarlosp.github.io
 
 # External API Keys
 GROQ_API_KEY=your_groq_api_key
@@ -244,6 +256,56 @@ pytest tests/integration/test_file_validation.py -v
 All endpoints (except `/health` and `/docs`) require authentication via header:
 - `X-API-Key`: Your secret API key
 
+### Authentication
+User authentication endpoints use Supabase Auth with JWT tokens:
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/auth/register` | Register a new user (sends verification email) |
+| POST | `/auth/login` | User login (returns JWT tokens) |
+| POST | `/auth/logout` | Logout and invalidate session |
+| POST | `/auth/refresh` | Refresh access token |
+| GET | `/auth/me` | Get current user profile |
+| POST | `/auth/resend-verification` | Resend verification email |
+| POST | `/auth/forgot-password` | Request password reset email |
+| POST | `/auth/reset-password` | Reset password with token |
+| PATCH | `/auth/profile` | Update user profile |
+| POST | `/auth/profile/picture` | Upload profile picture |
+| POST | `/auth/change-password` | Change password |
+| GET | `/auth/validate` | Validate access token |
+
+**Authentication Header:**
+- `Authorization: Bearer <access_token>`
+
+**Password Requirements:**
+- Minimum 8 characters
+- At least one uppercase letter
+- At least one lowercase letter
+- At least one digit
+
+**Register Response:**
+```json
+{
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "email_verified": false,
+    "profile": {
+      "name": "John",
+      "last_name": "Doe",
+      "telephone": "12345678",
+      "profile_picture": null
+    }
+  },
+  "tokens": {
+    "access_token": "jwt_token",
+    "refresh_token": "refresh_token",
+    "expires_in": 3600
+  },
+  "message": "Registration successful"
+}
+```
+
 
 ## Classification Categories
 
@@ -285,7 +347,7 @@ TrashIABackend/
 ├── core/
 │   ├── dependencies.py    # Dependency injection
 │   ├── file_validator.py  # File validation logic
-│   ├── security.py        # Security and authentication
+│   ├── security.py        # Security and API key authentication
 │   ├── error_handler.py   # Structured error responses
 │   └── protocols/         # Protocol definitions (interfaces)
 │       ├── ai.py          # AI provider protocol
@@ -297,21 +359,29 @@ TrashIABackend/
 │       └── validation.py  # Validation protocol
 ├── exceptions/
 │   ├── base_exception.py  # Base exception class
+│   ├── auth_exceptions.py # Authentication exceptions
 │   ├── external_api_exceptions.py # External API exceptions
 │   ├── image_exceptions.py
 │   ├── location_exceptions.py
 │   ├── model_exceptions.py
 │   └── validation_exceptions.py
+├── infrastructure/
+│   └── supabase_client.py # Supabase client singleton
 ├── models/
-│   ├── location_models.py  # Location data models
+│   ├── location_models.py # Location data models
+│   ├── user_models.py     # User and auth models
 │   └── TrashIAv2.h5       # Main classification model
+├── repositories/
+│   └── user_repository.py # User data repository
 ├── routes/
+│   ├── auth.py            # Authentication routes
 │   ├── prediction.py      # Prediction routes
 │   ├── chat.py            # Chat routes
 │   ├── location.py        # Location/recycling points routes
 │   ├── barcode.py         # Barcode scanning routes
 │   └── health.py          # Health check routes
 ├── services/
+│   ├── supabase_auth_service.py # Supabase authentication
 │   ├── trash_services.py  # Classification logic
 │   ├── chat_service.py    # Groq chat logic
 │   ├── chat_session_repository.py # Session storage
@@ -355,6 +425,7 @@ TrashIABackend/
 | Uvicorn | 0.35.0 | ASGI server |
 | Pillow | 11.3.0 | Image processing |
 | Pydantic | 2.11.7 | Data validation |
+| Supabase | 2.x | Authentication & Storage |
 | Groq Cloud | 1.0.0 | AI Chat (Llama) |
 | SlowAPI | 0.1.9 | Rate limiting |
 | python-magic | 0.4.27 | MIME validation |
