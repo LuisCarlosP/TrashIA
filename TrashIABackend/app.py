@@ -13,6 +13,7 @@ from routes.chat import router as chat_router
 from routes.location import router as location_router
 from routes.barcode import router as barcode_router
 from routes.health import router as health_router
+from routes.auth import router as auth_router
 from core.dependencies import get_prediction_service
 from core.security import get_api_key, validate_security_config
 from core.error_handler import register_exception_handlers
@@ -54,6 +55,7 @@ limiter = Limiter(key_func=get_remote_address, storage_uri=REDIS_URL)
 tags_metadata = [
     {"name": "General", "description": "General API information"},
     {"name": "Health", "description": "Health check endpoints"},
+    {"name": "Authentication", "description": "User authentication endpoints"},
     {"name": "Prediction", "description": "AI waste classification endpoints"},
     {"name": "Chat", "description": "Recycling assistant chat endpoints"},
     {"name": "Location", "description": "Recycling point location endpoints"},
@@ -97,6 +99,7 @@ if ENVIRONMENT == "production":
         return response
 
 app.include_router(health_router, tags=["Health"])
+app.include_router(auth_router, tags=["Authentication"])
 app.include_router(prediction_router, tags=["Prediction"], dependencies=[Depends(get_api_key)])
 app.include_router(chat_router, tags=["Chat"], dependencies=[Depends(get_api_key)])
 app.include_router(location_router, tags=["Location"], dependencies=[Depends(get_api_key)])
@@ -109,6 +112,13 @@ async def root():
         "version": "1.0.0",
         "endpoints": {
             "health": "/health",
+            "auth": {
+                "register": "/auth/register",
+                "login": "/auth/login",
+                "logout": "/auth/logout",
+                "refresh": "/auth/refresh",
+                "me": "/auth/me"
+            },
             "predict": "/predict",
             "chat": "/chat",
             "location": "/location/recycling-points",

@@ -93,3 +93,22 @@ def get_chat_service():
         raise RuntimeError(
             f"Chat service unavailable. Verify that GROQ_API_KEY is configured. Error: {e}"
         )
+
+
+def get_auth_service():
+    """
+    AuthService instance for dependency injection.
+    Creates a new instance per request for proper async handling.
+    """
+    from services.auth_service import AuthService
+    from repositories.user_repository import UserRepository, TokenBlacklistRepository
+    
+    try:
+        user_repo = UserRepository()
+        token_blacklist = TokenBlacklistRepository()
+        return AuthService(user_repo, token_blacklist)
+    except Exception as e:
+        logger.error(f"Error initializing AuthService: {e}")
+        raise RuntimeError(
+            f"Auth service unavailable. Verify Supabase configuration. Error: {e}"
+        )

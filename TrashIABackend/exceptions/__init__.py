@@ -18,6 +18,15 @@ from .external_api_exceptions import (
     OpenStreetMapError,
     CircuitBreakerOpenError
 )
+from .auth_exceptions import (
+    AuthenticationError,
+    UserAlreadyExistsError,
+    UserNotFoundError,
+    InvalidTokenError,
+    TokenRevokedError,
+    InactiveUserError,
+    WeakPasswordError
+)
 
 __all__ = [
     'TrashIAException',
@@ -36,5 +45,13 @@ __all__ = [
     'OpenFoodFactsError',
     'UPCItemDBError',
     'OpenStreetMapError',
-    'CircuitBreakerOpenError'
+    'CircuitBreakerOpenError',
+    # Auth exceptions
+    'AuthenticationError',
+    'UserAlreadyExistsError',
+    'UserNotFoundError',
+    'InvalidTokenError',
+    'TokenRevokedError',
+    'InactiveUserError',
+    'WeakPasswordError'
 ]
