@@ -75,14 +75,6 @@ class Settings(BaseSettings):
     )
     
     # =========================================================================
-    # JWT CONFIGURATION
-    # =========================================================================
-    JWT_SECRET_KEY: str = Field(description="Secret key for JWT signing (min 32 chars)")
-    JWT_ALGORITHM: str = Field(default="HS256", description="JWT signing algorithm")
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = Field(default=30, description="Access token expiration in minutes")
-    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = Field(default=7, description="Refresh token expiration in days")
-    
-    # =========================================================================
     # RATE LIMITING (requests per minute)
     # =========================================================================
     RATE_LIMIT_PREDICT: str = Field(description="Rate limit for prediction endpoint")
@@ -307,9 +299,3 @@ SUPABASE_SERVICE_KEY = _settings.SUPABASE_SERVICE_KEY
 
 # Frontend
 FRONTEND_URL = _settings.FRONTEND_URL
-
-# JWT
-JWT_SECRET_KEY = _settings.JWT_SECRET_KEY
-JWT_ALGORITHM = _settings.JWT_ALGORITHM
-JWT_ACCESS_TOKEN_EXPIRE_MINUTES = _settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
-JWT_REFRESH_TOKEN_EXPIRE_DAYS = _settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS
