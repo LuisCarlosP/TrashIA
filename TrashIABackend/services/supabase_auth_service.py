@@ -19,7 +19,8 @@ from models.user_models import (
     UserProfile,
     TokenResponse,
     AuthResponse,
-    MessageResponse
+    MessageResponse,
+    ProfilePictureResponse
 )
 from exceptions.auth_exceptions import (
     AuthenticationError,
@@ -378,7 +379,15 @@ class SupabaseAuthService:
         try:
             # Filter valid fields
             valid_fields = {'name', 'last_name', 'telephone', 'profile_picture'}
-            update_data = {k: v for k, v in kwargs.items() if k in valid_fields}
+            update_data = {}
+            
+            for k, v in kwargs.items():
+                if k in valid_fields:
+                    # Handle empty string as None (for removing profile picture)
+                    if v == '':
+                        update_data[k] = None
+                    else:
+                        update_data[k] = v
             
             if not update_data:
                 return await self._get_profile(str(user_id))
@@ -431,3 +440,100 @@ class SupabaseAuthService:
                 profile_picture=None,
                 created_at=None
             )
+
+    async def upload_profile_picture(
+        self,
+        user_id: UUID,
+        file_content: bytes,
+        content_type: str
+    ) -> str:
+        """
+        Upload profile picture to Supabase Storage.
+        
+        Args:
+            user_id: User's UUID
+            file_content: Image file bytes
+            content_type: MIME type of the image
+            
+        Returns:
+            str: Public URL of the uploaded image
+        """
+        try:
+            # Determine file extension from content type
+            extensions = {
+                'image/jpeg': 'jpg',
+                'image/png': 'png',
+                'image/gif': 'gif',
+                'image/webp': 'webp'
+            }
+            extension = extensions.get(content_type, 'jpg')
+            
+            # Create unique filename
+            import time
+            filename = f"{user_id}_{int(time.time())}.{extension}"
+            file_path = f"profile-pictures/{filename}"
+            
+            # Upload to Supabase Storage
+            result = self.client.storage.from_('avatars').upload(
+                path=file_path,
+                file=file_content,
+                file_options={"content-type": content_type, "upsert": "true"}
+            )
+            
+            # Get public URL
+            public_url = self.client.storage.from_('avatars').get_public_url(file_path)
+            
+            # Update profile with new picture URL
+            await self.update_profile(user_id, profile_picture=public_url)
+            
+            logger.info(f"Profile picture uploaded for user {user_id}")
+            return public_url
+            
+        except Exception as e:
+            logger.error(f"Upload profile picture error: {e}")
+            raise
+
+    async def change_password(
+        self,
+        email: str,
+        current_password: str,
+        new_password: str
+    ) -> MessageResponse:
+        """
+        Change user password after verifying current password.
+        
+        Args:
+            email: User's email address
+            current_password: Current password for verification
+            new_password: New password to set
+            
+        Returns:
+            MessageResponse: Success message
+        """
+        try:
+            # First, verify the current password by attempting to sign in
+            response = self.client.auth.sign_in_with_password({
+                "email": email,
+                "password": current_password
+            })
+            
+            if response.user is None or response.session is None:
+                raise AuthenticationError("Current password is incorrect")
+            
+            # Now update the password for the authenticated user
+            self.client.auth.update_user({
+                "password": new_password
+            })
+            
+            logger.info(f"Password changed for user: {email}")
+            
+            return MessageResponse(message="Password changed successfully")
+            
+        except AuthApiError as e:
+            logger.warning(f"Change password failed: {e}")
+            if "invalid" in str(e).lower() or "password" in str(e).lower():
+                raise AuthenticationError("Current password is incorrect")
+            raise AuthenticationError(str(e))
+        except Exception as e:
+            logger.error(f"Change password error: {e}")
+            raise

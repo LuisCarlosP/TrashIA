@@ -3,8 +3,9 @@ Authentication routes using Supabase Auth - Register, Login, Logout, Email Verif
 """
 import logging
 from typing import Optional
+from uuid import UUID
 
-from fastapi import APIRouter, Depends, status, Header, HTTPException
+from fastapi import APIRouter, Depends, status, Header, HTTPException, UploadFile, File
 
 from models.user_models import (
     UserRegisterRequest,
@@ -14,11 +15,13 @@ from models.user_models import (
     ForgotPasswordRequest,
     ResetPasswordRequest,
     UpdateProfileRequest,
+    ChangePasswordRequest,
     AuthResponse,
     TokenResponse,
     MessageResponse,
     UserResponse,
-    UserProfile
+    UserProfile,
+    ProfilePictureResponse
 )
 from services.supabase_auth_service import SupabaseAuthService
 
@@ -227,3 +230,76 @@ async def validate_token(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token is invalid or expired"
         )
+
+
+@router.post(
+    "/profile/picture",
+    response_model=ProfilePictureResponse,
+    summary="Upload profile picture",
+    description="""
+    Upload a new profile picture for the current user.
+    
+    **Supported formats:** JPEG, PNG, GIF, WebP
+    **Maximum file size:** 5MB
+    """
+)
+async def upload_profile_picture(
+    file: UploadFile = File(..., description="Profile picture image"),
+    authorization: str = Header(..., description="Bearer access_token"),
+    auth_service: SupabaseAuthService = Depends(get_auth_service)
+) -> ProfilePictureResponse:
+    """Upload a profile picture for the current user."""
+    token = extract_bearer_token(authorization)
+    user = await auth_service.get_current_user(token)
+    
+    # Validate file type
+    allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid file type. Allowed types: {', '.join(allowed_types)}"
+        )
+    
+    # Validate file size (5MB max)
+    max_size = 5 * 1024 * 1024
+    content = await file.read()
+    if len(content) > max_size:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File size exceeds 5MB limit"
+        )
+    
+    # Upload to Supabase Storage
+    url = await auth_service.upload_profile_picture(user.id, content, file.content_type)
+    
+    return ProfilePictureResponse(url=url, message="Profile picture uploaded successfully")
+
+
+@router.post(
+    "/change-password",
+    response_model=MessageResponse,
+    summary="Change password",
+    description="""
+    Change the user's password after verifying the current password.
+    
+    **Password Requirements:**
+    - Minimum 8 characters
+    - At least one uppercase letter
+    - At least one lowercase letter
+    - At least one digit
+    """
+)
+async def change_password(
+    password_data: ChangePasswordRequest,
+    authorization: str = Header(..., description="Bearer access_token"),
+    auth_service: SupabaseAuthService = Depends(get_auth_service)
+) -> MessageResponse:
+    """Change user password with current password verification."""
+    token = extract_bearer_token(authorization)
+    user = await auth_service.get_current_user(token)
+    
+    return await auth_service.change_password(
+        email=user.email,
+        current_password=password_data.current_password,
+        new_password=password_data.new_password
+    )
