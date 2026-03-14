@@ -4,10 +4,11 @@ FROM python:3.11-slim
 # Establecer directorio de trabajo
 WORKDIR /app
 
-# Instalar dependencias del sistema necesarias para TensorFlow y python-magic
+# Instalar dependencias del sistema necesarias para TensorFlow y python-magic y actualizar paquetes
 RUN apt-get update && apt-get install -y \
     libgomp1 \
     libmagic1 \
+    && apt-get upgrade -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copiar archivos de dependencias
