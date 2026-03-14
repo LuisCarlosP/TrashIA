@@ -32,9 +32,9 @@ spec:
             cpu: "250m"
         ports:
         - containerPort: 8000
-        env:
-        - name: REDIS_URL
-          value: "redis://trashia-redis:6379/0"
+        envFrom:
+        - configMapRef:
+            name: trashia-config
         volumeMounts:
         - name: tmp-volume
           mountPath: /tmp

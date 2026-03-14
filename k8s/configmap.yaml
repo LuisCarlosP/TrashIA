@@ -1,0 +1,34 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trashia-config
+data:
+  # CORS CONFIGURATION
+  ALLOWED_ORIGINS: "http://localhost:5173,http://localhost:8080,https://luiscarlosp.github.io,http://127.0.0.1:50110"
+  
+  # SERVER CONFIGURATION
+  ENVIRONMENT: "development"
+  HOST: "0.0.0.0"
+  PORT: "8000"
+  
+  # MODEL CONFIGURATION
+  MODEL_PATH: "./models/TrashIAv2.h5"
+  
+  # RESOURCE LIMITS
+  MAX_FILE_SIZE_MB: "5"
+  ALLOWED_MIME_TYPES: "image/jpeg,image/png,image/jpg"
+  
+  # REDIS 
+  REDIS_URL: "redis://trashia-redis:6379/0"
+  
+  # RATE LIMITING
+  RATE_LIMIT_PREDICT: "10/minute"
+  RATE_LIMIT_CHAT_SESSION: "20/minute"
+  RATE_LIMIT_CHAT_MESSAGE: "30/minute"
+  RATE_LIMIT_LOCATION: "30/minute"
+  RATE_LIMIT_BARCODE: "30/minute"
+
+  # EXTERNAL API URLS
+  OPEN_FOOD_FACTS_URL: "https://world.openfoodfacts.org/api/v2/product"
+  UPCITEMDB_URL: "https://api.upcitemdb.com/prod/trial/lookup"
+  OVERPASS_SERVERS: "https://overpass-api.de/api/interpreter,https://overpass.kumi.systems/api/interpreter,https://maps.mail.ru/osm/tools/overpass/api/interpreter"
